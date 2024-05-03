@@ -18,7 +18,7 @@ void enqueue(struct queue_t * q, struct pcb_t * proc) {
         }
         else{
                 int i;
-                for (i = q->size; i > 0 && proc->priority < q->proc[i - 1]->priority; i--)
+                for (i = q->size; i > 0 && proc->priority >= q->proc[i - 1]->priority; i--)
                 {
                         q->proc[i] = q->proc[i - 1];
                 } 

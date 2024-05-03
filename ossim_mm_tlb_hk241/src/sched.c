@@ -58,7 +58,7 @@ struct pcb_t * get_mlq_proc(void) {
 			break;
 		}
 	};
-	if(INDEX == MAX_PRIO) INDEX =0;
+	INDEX =0;
 	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
