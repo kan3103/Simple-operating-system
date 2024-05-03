@@ -55,14 +55,17 @@ static void * cpu_routine(void * args) {
 	struct pcb_t * proc = NULL;
 	while (1) {
 		/* Check the status of current process */
+		while(timer_id->time_wait==0);
+		while(timer_id->cpu_wait==0); //wait for load
 		if (proc == NULL) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
 			proc = get_proc();
+	
 			if (proc == NULL) {
                            next_slot(timer_id);
                            continue; /* First load failed. skip dummy load */
-                        }
+            }
 		}else if (proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
 			printf("\tCPU %d: Processed %2d has finished\n",
@@ -115,12 +118,15 @@ static void * ld_routine(void * args) {
 	int i = 0;
 	printf("ld_routine\n");
 	while (i < num_processes) {
+		while(timer_id->time_wait == 0); 
 		struct pcb_t * proc = load(ld_processes.path[i]);
 #ifdef MLQ_SCHED
 		proc->prio = ld_processes.prio[i];
 #endif
 		while (current_time() < ld_processes.start_time[i]) {
+			wait_cpu();
 			next_slot(timer_id);
+			while(timer_id->time_wait==0){};
 		}
 #ifdef MM_PAGING
 		proc->mm = malloc(sizeof(struct mm_struct));
@@ -134,11 +140,13 @@ static void * ld_routine(void * args) {
 		add_proc(proc);
 		free(ld_processes.path[i]);
 		i++;
+		wait_cpu();
 		next_slot(timer_id);
 	}
 	free(ld_processes.path);
 	free(ld_processes.start_time);
 	done = 1;
+	wait_cpu();
 	detach_event(timer_id);
 	pthread_exit(NULL);
 }
@@ -209,6 +217,7 @@ static void read_config(const char * path) {
 #else
 		fscanf(file, "%lu %s\n", &ld_processes.start_time[i], proc);
 #endif
+
 		strcat(ld_processes.path[i], proc);
 	}
 }
@@ -250,11 +259,10 @@ int main(int argc, char * argv[]) {
 
 	struct memphy_struct mram;
 	struct memphy_struct mswp[PAGING_MAX_MMSWP];
-
+	
 
 	/* Create MEM RAM */
 	init_memphy(&mram, memramsz, rdmflag);
-
 	/* Create all MEM SWAP */ 
 	int sit;
 	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
@@ -280,7 +288,6 @@ int main(int argc, char * argv[]) {
 
 	/* Init scheduler */
 	init_scheduler();
-
 	/* Run CPU and loader */
 #ifdef MM_PAGING
 	pthread_create(&ld, NULL, ld_routine, (void*)mm_ld_args);

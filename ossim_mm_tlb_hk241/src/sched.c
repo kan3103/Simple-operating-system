@@ -11,6 +11,7 @@ static pthread_mutex_t queue_lock;
 
 #ifdef MLQ_SCHED
 static struct queue_t mlq_ready_queue[MAX_PRIO];
+unsigned long INDEX;
 #endif
 
 int queue_empty(void) {
@@ -27,8 +28,10 @@ void init_scheduler(void) {
 #ifdef MLQ_SCHED
 	int i ;
 
-	for (i = 0; i < MAX_PRIO; i ++)
+	for (i = 0; i < MAX_PRIO; i ++){
 		mlq_ready_queue[i].size = 0;
+	};
+	INDEX = 0;
 #endif
 	ready_queue.size = 0;
 	run_queue.size = 0;
@@ -47,7 +50,16 @@ struct pcb_t * get_mlq_proc(void) {
 	/*TODO: get a process from PRIORITY [ready_queue].
 	 * Remember to use lock to protect the queue.
 	 */
-	proc = dequeue(&mlq_ready_queue[0]);
+	pthread_mutex_lock(&queue_lock);
+	for (INDEX = INDEX ; INDEX < MAX_PRIO; INDEX++){
+		if (!empty(&mlq_ready_queue[INDEX]))
+		{
+			proc = dequeue(&mlq_ready_queue[INDEX]);
+			break;
+		}
+	};
+	if(INDEX == MAX_PRIO) INDEX =0;
+	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
 

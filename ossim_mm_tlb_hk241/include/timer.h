@@ -7,6 +7,8 @@
 struct timer_id_t {
 	int done;
 	int fsh;
+	int cpu_wait;
+	int time_wait;
 	pthread_cond_t event_cond;
 	pthread_mutex_t event_lock;
 	pthread_cond_t timer_cond;
@@ -25,4 +27,7 @@ void next_slot(struct timer_id_t* timer_id);
 
 uint64_t current_time();
 
+void wait_time();
+void wait_cpu();
+void unlock_cpu();
 #endif
