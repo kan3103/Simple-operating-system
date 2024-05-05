@@ -6,6 +6,8 @@
 
 #include "mm.h"
 #include <stdlib.h>
+#include <stdio.h>  // Added to resolve warnings related to printf
+#include <string.h> // Added to resolve warnings related to strcpy, sprintf, and strcat
 
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor

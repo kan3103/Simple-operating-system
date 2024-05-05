@@ -14,6 +14,10 @@
  *@rg_elmt: new region
  *
  */
+#define PAGING_SWPOFF(pte) PAGING_SWP(pte)
+#define PAGING_SWPTYP(pte) PAGING_SWP(pte)
+
+void update_tlb(struct pcb_t *caller, int pgn, int fpn);
 int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
@@ -186,14 +190,10 @@ int pgfree_data(struct pcb_t *proc, uint32_t reg_index)
 int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
 {
   uint32_t pte = mm->pgd[pgn];
- 
+
   if (!PAGING_PAGE_PRESENT(pte))
   { /* Page is not online, make it actively living */
-    int vicpgn, swpfpn; 
-    int vicfpn;
-    uint32_t vicpte;
-
-    //int tgtfpn = PAGING_SWP(pte);//the target frame storing our variable
+    int vicpgn, swpfpn;
     int tgtfpn = PAGING_SWPOFF(pte);
     int tgtswp_type = PAGING_SWPTYP(pte);
     /* TODO: Play with your paging theory here */
@@ -204,68 +204,30 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
       if(find_victim_page(caller->mm, &vicpgn) < 0)
         return -1; /* No victim page found */
     }
-    vicpte = caller->mm->pgd[vicpgn];
-    vicfpn = PAGING_FPN(vicpte);
+    //uint32_t vicpte = caller->mm->pgd[vicpgn]; không dùng
 
-    int i = 0;
-    struct memphy_struct* mswp = (struct memphy_struct*)caller->mswp;
-    for (i = 0; i < PAGING_MAX_MMSWP; i++){
-      if (mswp + i == caller->active_mswp)
-        break;
+    /* Get free frame in MEMSWP */
+    if(MEMPHY_get_freefp(caller->active_mswp, &swpfpn) < 0)
+    {
+      struct memphy_struct *mswpit = caller->mswp[tgtswp_type];
+      if(MEMPHY_get_freefp(mswpit, &swpfpn) < 0)
+        return -1; /* No free frame found */
+      __swap_cp_page(mswpit, swpfpn, caller->mram, vicpgn);
+      caller->active_mswp = mswpit;
     }
+    else{
+      __swap_cp_page(caller->active_mswp, swpfpn, caller->mram, vicpgn);
 
+      __swap_cp_page(&caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn);
+      MEMPHY_put_freefp(caller->mswp[tgtswp_type], tgtfpn);
+      pte_set_swap(&caller->mm->pgd[vicpgn], tgtswp_type, swpfpn);
+      pte_set_fpn(&caller->mm->pgd[pgn], vicpgn);
 
-      /* Get free frame in MEMSWP */
-      if(MEMPHY_get_freefp(caller->active_mswp, &swpfpn) < 0)
-      {
-        struct memphy_struct **mswpit = caller->mswp;
-        for (i = 0; i < PAGING_MAX_MMSWP; i++){
-          struct memphy_struct *tmp_swp = (struct memphy_struct *)(mswpit);
-          if(MEMPHY_get_freefp(tmp_swp + i, &swpfpn) == 0)
-          {
-            __swap_cp_page(caller->mram, vicpgn, tmp_swp + i, swpfpn);
-            caller->active_mswp = tmp_swp + i;
-            break;
-          }
-        }
-      }
-      else{
-        __swap_cp_page(caller->mram, vicpgn, caller->active_mswp, swpfpn);
-
-        __swap_cp_page(mswp + tgtswp_type, tgtfpn, caller->mram, vicpgn);
-        MEMPHY_put_freefp(mswp + tgtswp_type, tgtfpn);
-        pte_set_swap(&caller->mm->pgd[vicpgn], i, swpfpn);
-        pte_set_fpn(&caller->mm->pgd[pgn], vicpgn);
-
-        enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
-        pte = caller->mm->pgd[pgn];
-      }
-      *fpn = PAGING_FPN(pte);
-      return 0;
-      
-      // Do swap frame from MEMRAM to MEMSWP and vice versa*/
-      // Copy victim frame to swap */
-      //__swap_cp_page(caller->mm, vicpgn, caller->active_mswp, swpfpn);
-      //__swap_cp_page();
-      // Copy target frame from swap to mem */
-      //__swap_cp_page();
-      //__swap_cp_page(caller->active_mswp, tgtfpn, caller->mm, vicpgn);
-      // Update page table */
-      // pte_set_swap() &mm->pgd;
-      //pte_set_swap(&mm->pgd[vicpgn], swpfpn, caller->active_mswp);
-      //pte_set_fpn(&pte, vicpgn);
-
-      // Update its online status of the target page */
-      // pte_set_fpn() & mm->pgd[pgn];
-      //pte_set_fpn(&pte, tgtfpn);
-      
-
-#ifdef CPU_TLB
-    /* Update its online status of TLB (if needed) */
-    update_tlb(caller, pgn, tgtfpn);
-#endif
-
-    enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
+      enlist_pgn_node(&caller->mm->fifo_pgn,pgn);
+      pte = caller->mm->pgd[pgn];
+    }
+    *fpn = PAGING_FPN(pte);
+    return 0;
   }
 
   *fpn = PAGING_FPN(pte);
