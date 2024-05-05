@@ -4,7 +4,7 @@
 #include <stdlib.h>
 
 static pthread_t _timer;
-
+extern FILE *output_file;
 struct timer_id_container_t {
 	struct timer_id_t id;
 	struct timer_id_container_t * next;
@@ -21,6 +21,7 @@ static int timer_stop = 0;
 static void * timer_routine(void * args) {
 	while (!timer_stop) {
 		printf("Time slot %3lu\n", current_time());
+		fprintf(output_file,"Time slot %3lu\n", current_time());
 		struct timer_id_container_t * temp;
 		wait_time();
 		int fsh = 0;
