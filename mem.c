@@ -41,33 +41,16 @@ static addr_t get_second_lv(addr_t addr) {
 
 /* Search for page table table from the a segment table */
 static struct trans_table_t * get_trans_table(
-        addr_t index, 	// Segment level index
-        struct page_table_t * page_table) { // first level table
-	//Enter your code here
-    
-    //kiểm tra xem page_table có bằng NULL không
-    if (page_table == NULL) {
-        printf("Error: page_table is NULL\n");
+        addr_t index,          // Segment level index
+        struct page_table_t *page_table) { // first level table
+    if (page_table == NULL || page_table->size == 0) {
         return NULL;
     }
 
-    //kiểm tra xem page_table->table có bằng NULL không
-    if (page_table->table == NULL) {
-        printf("Error: page_table->table is NULL\n");
-        return NULL;
-    }
-
-    //kiểm tra xem page_table->size có bằng 0 không
-    if (page_table->size == 0) {
-        printf("Error: page_table->size is 0\n");
-        return NULL;
-    }
-
-	//duyệt qua các phần tử của page_table->table
     int i;
     for (i = 0; i < page_table->size; i++) {
         if (page_table->table[i].v_index == index) {
-            return &(page_table->table[i]);
+            return (struct trans_table_t *)&(page_table->table[i]);
         }
     }
     return NULL;
