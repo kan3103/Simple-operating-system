@@ -22,8 +22,10 @@ int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
 
-  if (rg_elmt.rg_start >= rg_elmt.rg_end)
+  if (rg_elmt.rg_start >= rg_elmt.rg_end){
+    printf("Invalid region to enlist\n");
     return -1;
+  }
 
   if (rg_node != NULL)
     rg_elmt.rg_next = rg_node;
@@ -115,7 +117,9 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
   if(old_sbrk + size > cur_vma->vm_end){
-      if (inc_vma_limit(caller, vmaid, inc_sz) < 0)
+      if (inc_vma_limit(caller, vmaid, inc_sz) < 0){
+        
+      }
         return -1; /* Failed to increase limit */
     }
   cur_vma->sbrk += size;
@@ -139,10 +143,13 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
  */
 int __free(struct pcb_t *caller, int vmaid, int rgid)
 {
+  printf("test __free() \n");
   struct vm_rg_struct rgnode;
 
-  if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
+  if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ){
+    printf("Invalid region ID in __free()\n");
     return -1;
+  }
 
   /* TODO: Manage the collect freed region to freerg_list */
   rgnode = *(get_symrg_byid(caller->mm, rgid));
@@ -150,8 +157,9 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
   rgnode.rg_start = rgnode.rg_end = -1;
-  struct vm_rg_struct *grnode = malloc(sizeof(struct vm_rg_struct));
-  grnode->rg_next = NULL;
+  rgnode.rg_next = NULL;
+  //struct vm_rg_struct *grnode = malloc(sizeof(struct vm_rg_struct));
+  //grnode->rg_next = NULL;
 
   return 0;
 }
@@ -218,7 +226,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     else{
       __swap_cp_page(caller->active_mswp, swpfpn, caller->mram, vicpgn);
 
-      __swap_cp_page(caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn); // Corrected line
+      __swap_cp_page(caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn); 
       MEMPHY_put_freefp(caller->mswp[tgtswp_type], tgtfpn);
       pte_set_swap(&caller->mm->pgd[vicpgn], tgtswp_type, swpfpn);
       pte_set_fpn(&caller->mm->pgd[pgn], vicpgn);
@@ -341,7 +349,10 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value)
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   
   if(currg == NULL || cur_vma == NULL) /* Invalid memory identify */
-	  return -1;
+  {
+    printf("Invalid memory identify\n");
+    return -1;
+  }
 
   pg_setval(caller->mm, currg->rg_start + offset, value, caller);
 

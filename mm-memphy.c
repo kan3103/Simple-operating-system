@@ -36,11 +36,15 @@ int MEMPHY_mv_csr(struct memphy_struct *mp, int offset)
  */
 int MEMPHY_seq_read(struct memphy_struct *mp, int addr, BYTE *value)
 {
-   if (mp == NULL)
-     return -1;
+   if (mp == NULL){
+      printf("MEMPHY_seq_read: mp is NULL\n");
+      return -1;
+   }
 
-   if (!mp->rdmflg)
-     return -1; /* Not compatible mode for sequential read */
+   if (!mp->rdmflg){
+      printf("MEMPHY_seq_read: Not compatible mode for sequential read\n");
+      return -1;
+   }
 
    MEMPHY_mv_csr(mp, addr);
    *value = (BYTE) mp->storage[addr];
@@ -56,8 +60,10 @@ int MEMPHY_seq_read(struct memphy_struct *mp, int addr, BYTE *value)
  */
 int MEMPHY_read(struct memphy_struct * mp, int addr, BYTE *value)
 {
-   if (mp == NULL)
-     return -1;
+   if (mp == NULL){
+      printf("MEMPHY_read: mp is NULL\n");
+      return -1;
+   }
 
    if (mp->rdmflg)
       *value = mp->storage[addr];
@@ -76,11 +82,15 @@ int MEMPHY_read(struct memphy_struct * mp, int addr, BYTE *value)
 int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
 {
 
-   if (mp == NULL)
-     return -1;
+   if (mp == NULL){
+       printf("MEMPHY_seq_write: mp is NULL\n");
+       return -1;
+   }
 
-   if (!mp->rdmflg)
-     return -1; /* Not compatible mode for sequential read */
+   if (!mp->rdmflg){
+         printf("MEMPHY_seq_write: Not compatible mode for sequential read\n");
+         return -1;
+   }
 
    MEMPHY_mv_csr(mp, addr);
    mp->storage[addr] = value;
@@ -96,8 +106,10 @@ int MEMPHY_seq_write(struct memphy_struct * mp, int addr, BYTE value)
  */
 int MEMPHY_write(struct memphy_struct * mp, int addr, BYTE data)
 {
-   if (mp == NULL)
-     return -1;
+   if (mp == NULL){
+      printf("MEMPHY_write: mp is NULL\n");
+      return -1;
+   }
 
    if (mp->rdmflg)
       mp->storage[addr] = data;
@@ -118,8 +130,10 @@ int MEMPHY_format(struct memphy_struct *mp, int pagesz)
     struct framephy_struct *newfst, *fst;
     int iter = 0;
 
-    if (numfp <= 0)
+    if (numfp <= 0){
+      printf("MEMPHY_format: Invalid number of framephy\n");
       return -1;
+    }
 
     /* Init head of free framephy list */ 
     fst = malloc(sizeof(struct framephy_struct));
@@ -143,8 +157,10 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 {
    struct framephy_struct *fp = mp->free_fp_list;
 
-   if (fp == NULL)
-     return -1;
+   if (fp == NULL){
+       printf("MEMPHY_get_freefp: No free framephy\n");
+       return -1;
+   }
 
    *retfpn = fp->fpn;
    mp->free_fp_list = fp->fp_next;
@@ -161,7 +177,10 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 int MEMPHY_dump(struct memphy_struct * mp)
 {
    /* TODO: Dump memphy content mp->storage for tracing the memory content */
-   if(!mp || !mp->storage) return -1;
+   if(!mp || !mp->storage){
+       printf("MEMPHY_dump: mp or mp->storage is NULL\n");
+       return -1;
+   }
    printf("Dumping memphy content\n");
    for(int i = 0; i < mp->maxsz; i++){
      if(mp->storage[i] != 0){
