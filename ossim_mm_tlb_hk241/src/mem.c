@@ -38,20 +38,24 @@ static addr_t get_second_lv(addr_t addr) {
 	return (addr >> OFFSET_LEN) - (get_first_lv(addr) << PAGE_LEN);
 }
 
+
 /* Search for page table table from the a segment table */
 static struct trans_table_t * get_trans_table(
-		addr_t index, 	// Segment level index
-		struct page_table_t * page_table) { // first level table
-	
-	/* DO NOTHING HERE. This mem is obsoleted */
+        addr_t index,          // Segment level index
+        struct page_table_t *page_table) { // first level table
+    if (page_table == NULL || page_table->size == 0) {
+        return NULL;
+    }
 
-	int i;
-	for (i = 0; i < page_table->size; i++) {
-		// Enter your code here
-	}
-	return NULL;
-
+    int i;
+    for (i = 0; i < page_table->size; i++) {
+        if (page_table->table[i].v_index == index) {
+            return (struct trans_table_t *)&(page_table->table[i]);
+        }
+    }
+    return NULL;
 }
+
 
 /* Translate virtual address to physical address. If [virtual_addr] is valid,
  * return 1 and write its physical counterpart to [physical_addr].
@@ -169,5 +173,3 @@ void dump(void) {
 		}
 	}
 }
-
-

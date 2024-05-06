@@ -67,7 +67,8 @@
 #define CLRBIT(v,mask) (v=v&~mask)
 
 #define SETVAL(v,value,mask,offst) (v=(v&~mask)|((value<<offst)&mask))
-#define GETVAL(v,mask,offst) ((v&mask)>>offst)
+#define GETVAL(v, mask, offst) (((v) & (mask)) >> (offst))
+
 
 /* Other masks */
 #define PAGING_OFFST_MASK  GENMASK(PAGING_ADDR_OFFST_HIBIT,PAGING_ADDR_OFFST_LOBIT)

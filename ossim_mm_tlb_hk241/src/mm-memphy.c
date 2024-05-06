@@ -6,6 +6,8 @@
 
 #include "mm.h"
 #include <stdlib.h>
+#include <stdio.h> 
+#include <string.h> //thêm vào để sử dụng hàm strcpy và strcat
 
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
@@ -150,6 +152,7 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
    /* MEMPHY is iteratively used up until its exhausted
     * No garbage collector acting then it not been released
     */
+   
    free(fp);
 
    return 0;
@@ -157,11 +160,15 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 
 int MEMPHY_dump(struct memphy_struct * mp)
 {
-    /*TODO dump memphy contnt mp->storage 
-     *     for tracing the memory content
-     */
-
-    return 0;
+   /* TODO: Dump memphy content mp->storage for tracing the memory content */
+   if(!mp || !mp->storage) return -1;
+   printf("Dumping memphy content\n");
+   for(int i = 0; i < mp->maxsz; i++){
+     if(mp->storage[i] != 0){
+       printf("Address: %d, Value: %d\n", i, mp->storage[i]);
+     }
+   }
+   return 0;
 }
 
 int MEMPHY_put_freefp(struct memphy_struct *mp, int fpn)

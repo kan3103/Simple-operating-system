@@ -58,7 +58,9 @@ static void * cpu_routine(void * args) {
 	while (1) {
 		/* Check the status of current process */
 		while(timer_id->time_wait==0);
+		
 		while(timer_id->cpu_wait==0); //wait for load
+		
 		if (proc == NULL) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
@@ -309,6 +311,8 @@ int main(int argc, char * argv[]) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
 	}
+	// uint32_t temp =2147483649;
+	// printf("%d",PAGING_FPN(temp));
 	char path[100];
 	path[0] = '\0';
 	char pathout[100];
