@@ -6,8 +6,8 @@
 
 #include "mm.h"
 #include <stdlib.h>
-#include <stdio.h>  // Added to resolve warnings related to printf
-#include <string.h> // Added to resolve warnings related to strcpy, sprintf, and strcat
+#include <stdio.h> 
+#include <string.h> //thêm vào để sử dụng hàm strcpy và strcat
 
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
@@ -161,19 +161,13 @@ int MEMPHY_get_freefp(struct memphy_struct *mp, int *retfpn)
 int MEMPHY_dump(struct memphy_struct * mp)
 {
    /* TODO: Dump memphy content mp->storage for tracing the memory content */
-   char result[1000];
-   strcpy(result, "Memory content: ");
-   char temp[1000];
-   if(mp && mp->storage){
-      for(int i = 0; i < mp->maxsz; i++){
-         if(mp->storage[i] != 0){
-            sprintf(temp, "%d ", mp->storage[i]);
-            strcat(result, temp);
-         }
-      }
-      strcat(result, "\n");
+   if(!mp || !mp->storage) return -1;
+   printf("Dumping memphy content\n");
+   for(int i = 0; i < mp->maxsz; i++){
+     if(mp->storage[i] != 0){
+       printf("Address: %d, Value: %d\n", i, mp->storage[i]);
+     }
    }
-   printf("%s", result);
    return 0;
 }
 

@@ -218,7 +218,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     else{
       __swap_cp_page(caller->active_mswp, swpfpn, caller->mram, vicpgn);
 
-      __swap_cp_page(&caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn);
+      __swap_cp_page(caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn); // Corrected line
       MEMPHY_put_freefp(caller->mswp[tgtswp_type], tgtfpn);
       pte_set_swap(&caller->mm->pgd[vicpgn], tgtswp_type, swpfpn);
       pte_set_fpn(&caller->mm->pgd[pgn], vicpgn);

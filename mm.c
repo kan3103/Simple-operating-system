@@ -105,13 +105,14 @@ int vmap_page_range(struct pcb_t *caller, // process call
    for(pgit = 0; pgit < pgnum; pgit++)
    {
      fpit = fpit->fp_next;
-     pgn = PAGING_PGN(addr + pgit * PAGING_PAGESZ);
+     pgn = PAGING_PGN((addr + pgit * PAGING_PAGESZ));
      if(fpit){
         pte_set_fpn(&caller->mm->pgd[pgn], fpit->fpn);
         enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
      }
     }
     ret_rg->rg_end += (pgit - 1) * PAGING_PAGESZ;
+    return 0;
 }
 
 /* 
