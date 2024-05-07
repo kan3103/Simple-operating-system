@@ -15,7 +15,7 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+#ifdef CPU_TLB
 int tlb_change_all_page_tables_of(struct pcb_t *proc,  struct memphy_struct * mp)
 {
   /* TODO update all page table directory info 
@@ -75,12 +75,14 @@ int tlbfree_data(struct pcb_t *proc, uint32_t reg_index)
 int tlbread(struct pcb_t * proc, uint32_t source,
             uint32_t offset, 	uint32_t destination) 
 {
+  int val;
   BYTE data, frmnum = -1;
-	
+	int pgnum = PAGING_PGN(proc->mm->symrgtbl[destination].rg_start + offset);
+  tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
   /* TODO retrieve TLB CACHED frame num of accessing page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
   /* frmnum is return value of tlb_cache_read/write value*/
-	
+  
 #ifdef IODUMP
   if (frmnum >= 0)
     printf("TLB hit at read region=%d offset=%d\n", 
@@ -93,33 +95,35 @@ int tlbread(struct pcb_t * proc, uint32_t source,
 #endif
   MEMPHY_dump(proc->mram);
 #endif
-
-  int val = __read(proc, 0, source, offset, &data);
-
-  destination = (uint32_t) data;
-
   /* TODO update TLB CACHED with frame num of recent accessing page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
-
+  if(frmnum >= 0){
+    int phyaddr = (frmnum << PAGING_ADDR_FPN_LOBIT) + offset;
+    MEMPHY_read(proc->mram, phyaddr, &data);
+    
+  }
+	else{
+    val = __read(proc, 0, source, offset, &data);
+    frmnum = PAGING_FPN(proc->mm->pgd[pgnum]);
+    tlb_cache_write(proc->tlb, proc->pid, pgnum, frmnum);
+  }
+  TLBMEMPHY_dump(proc->tlb);
+ // destination = (uint32_t) data;
+  printf("data readed : %d\n", data);
   return val;
 }
 
-/*tlbwrite - CPU TLB-based write a region memory
- *@proc: Process executing the instruction
- *@data: data to be wrttien into memory
- *@destination: index of destination register
- *@offset: destination address = [destination] + [offset]
- */
+
 int tlbwrite(struct pcb_t * proc, BYTE data,
              uint32_t destination, uint32_t offset)
 {
   int val;
   BYTE frmnum = -1;
-
+  int pgnum = PAGING_PGN(proc->mm->symrgtbl[destination].rg_start + offset);
+  tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
   /* TODO retrieve TLB CACHED frame num of accessing page(s))*/
   /* by using tlb_cache_read()/tlb_cache_write()
   frmnum is return value of tlb_cache_read/write value*/
-
 #ifdef IODUMP
   if (frmnum >= 0)
     printf("TLB hit at write region=%d offset=%d value=%d\n",
@@ -132,13 +136,18 @@ int tlbwrite(struct pcb_t * proc, BYTE data,
 #endif
   MEMPHY_dump(proc->mram);
 #endif
-
-  val = __write(proc, 0, destination, offset, data);
-
+  
   /* TODO update TLB CACHED with frame num of recent accessing page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
-
+  if(frmnum >= 0){//ghi truc tiep vao bo nho
+    int phyaddr = (frmnum << PAGING_ADDR_FPN_LOBIT) + offset;
+    MEMPHY_write(proc->mram, phyaddr, data);
+  }
+  else{
+    val = __write(proc, 0, destination, offset, data);
+    frmnum = PAGING_FPN(proc->mm->pgd[pgnum]);
+    tlb_cache_write(proc->tlb, proc->pid, pgnum, frmnum);
+  }
   return val;
 }
-
-//#endif
+#endif

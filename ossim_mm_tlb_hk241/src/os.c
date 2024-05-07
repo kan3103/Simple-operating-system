@@ -61,7 +61,7 @@ static void * cpu_routine(void * args) {
 		
 		while(timer_id->cpu_wait==0); //wait for load
 		
-		if (proc == NULL) {
+		if (proc == NULL && !done) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
 			proc = get_proc();
@@ -70,7 +70,7 @@ static void * cpu_routine(void * args) {
                            next_slot(timer_id);
                            continue; /* First load failed. skip dummy load */
             }
-		}else if (proc->pc == proc->code->size) {
+		}else if (proc && proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
 			printf("\tCPU %d: Processed %2d has finished\n",
 				id ,proc->pid);
@@ -79,7 +79,7 @@ static void * cpu_routine(void * args) {
 			free(proc);
 			proc = get_proc();
 			time_left = 0;
-		}else if (time_left == 0) {
+		}else if (proc && time_left == 0) {
 			/* The process has done its job in current time slot */
 			printf("\tCPU %d: Put process %2d to run queue\n",
 				id, proc->pid);
@@ -403,6 +403,3 @@ int main(int argc, char * argv[]) {
 	return 0;
 
 }
-
-
-

@@ -18,22 +18,35 @@
 #define PAGING_SWPTYP(pte) PAGING_SWP(pte)
 
 void update_tlb(struct pcb_t *caller, int pgn, int fpn);
-int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct rg_elmt)
+
+int enlist_vm_freerg_list(struct mm_struct *mm, struct vm_rg_struct *rg_elmt)
 {
   struct vm_rg_struct *rg_node = mm->mmap->vm_freerg_list;
-
-  if (rg_elmt.rg_start >= rg_elmt.rg_end)
+  if (rg_elmt->rg_start >= rg_elmt->rg_end)
     return -1;
+  //when enlist a rg continous to another rg, should merge those 2
+  struct vm_rg_struct *rgit = mm->mmap->vm_freerg_list;
+  while(rgit!= NULL){
+    if(rgit->rg_start != rgit->rg_end){
+      if(rgit->rg_start == rg_elmt->rg_end){
+        rgit->rg_start = rg_elmt->rg_start;
+        return 0;
+      }
+      else if(rgit->rg_end == rg_elmt->rg_start){
+        rgit->rg_end = rg_elmt->rg_end;
+        return 0;
+      }
+    }
+    rgit = rgit->rg_next;
+  }
 
   if (rg_node != NULL)
-    rg_elmt.rg_next = rg_node;
-
+    rg_elmt->rg_next = rg_node;
   /* Enlist the new region */
-  mm->mmap->vm_freerg_list = &rg_elmt;
-
+  mm->mmap->vm_freerg_list = rg_elmt;
+  
   return 0;
 }
-
 /*get_vma_by_num - get vm area by numID
  *@mm: memory region
  *@vmaid: ID vm area to alloc memory region
@@ -83,50 +96,49 @@ struct vm_rg_struct *get_symrg_byid(struct mm_struct *mm, int rgid)
  */
 int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr)
 {
+
   /*Allocate at the toproof */
-  if(caller->mm->symrgtbl[rgid].rg_start < caller->mm->symrgtbl[rgid].rg_end)
-    pgfree_data(caller, rgid);
-
-
   struct vm_rg_struct rgnode;
-
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
   {
     caller->mm->symrgtbl[rgid].rg_start = rgnode.rg_start;
     caller->mm->symrgtbl[rgid].rg_end = rgnode.rg_end;
-
     *alloc_addr = rgnode.rg_start;
-
+    
     return 0;
   }
-
   /* TODO get_free_vmrg_area FAILED handle the region management (Fig.6)*/
-
-
   /*Attempt to increate limit to get space */
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
-  int inc_sz = PAGING_PAGE_ALIGNSZ(size);
+  
+  // int inc_sz = PAGING_PAGE_ALIGNSZ(size); //original inc_sz
+  int inc_sz = PAGING_PAGE_ALIGNSZ((size + cur_vma->sbrk) - cur_vma->vm_end);
   //int inc_limit_ret
-  int old_sbrk ;
+  int old_sbrk = cur_vma->sbrk ;
+  int new_sbrk = old_sbrk + size;
+  
 
-  old_sbrk = cur_vma->sbrk;
-
+  if(new_sbrk < cur_vma->vm_end){
+    
+    caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
+    caller->mm->symrgtbl[rgid].rg_end = new_sbrk;
+    cur_vma->sbrk = new_sbrk;
+   
+    return 0;
+  }
   /* TODO INCREASE THE LIMIT
    * inc_vma_limit(caller, vmaid, inc_sz)
    */
-  if(old_sbrk + size > cur_vma->vm_end){
-      if (inc_vma_limit(caller, vmaid, inc_sz) < 0)
-        return -1; /* Failed to increase limit */
-    }
-  cur_vma->sbrk += size;
-
+  
+  inc_vma_limit(caller, vmaid, inc_sz);
 
   /*Successful increase limit */
   caller->mm->symrgtbl[rgid].rg_start = old_sbrk;
   caller->mm->symrgtbl[rgid].rg_end = old_sbrk + size;
+  caller->mm->mmap->sbrk = new_sbrk;
 
   *alloc_addr = old_sbrk;
-
+  //printf("alloc rg %d start: %d, end: %d\n", rgid, caller->mm->symrgtbl[rgid].rg_start, caller->mm->symrgtbl[rgid].rg_end);
   return 0;
 }
 
@@ -139,22 +151,27 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
  */
 int __free(struct pcb_t *caller, int vmaid, int rgid)
 {
-  struct vm_rg_struct rgnode;
-
+  struct vm_rg_struct *rgnode = malloc(sizeof(struct vm_rg_struct)); //khai bao khu vuc trong' moi bang heap
   if(rgid < 0 || rgid > PAGING_MAX_SYMTBL_SZ)
     return -1;
 
   /* TODO: Manage the collect freed region to freerg_list */
-  rgnode = *(get_symrg_byid(caller->mm, rgid));
+  struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
+  if(cur_vma == NULL) return -1;
 
+  struct vm_rg_struct *freed_rg = &(caller->mm->symrgtbl[rgid]);
+  if(freed_rg == NULL) return -1;
+
+  rgnode->rg_start = freed_rg->rg_start;
+  rgnode->rg_end = freed_rg->rg_end;
+
+  freed_rg->rg_start = freed_rg->rg_end = 0;
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
-  rgnode.rg_start = rgnode.rg_end = -1;
-  struct vm_rg_struct *grnode = malloc(sizeof(struct vm_rg_struct));
-  grnode->rg_next = NULL;
-
+  print_list_rg(caller->mm->mmap->vm_freerg_list);
   return 0;
 }
+
 
 /*pgalloc - PAGING-based allocate a region memory
  *@proc:  Process executing the instruction
@@ -218,7 +235,7 @@ int pg_getpage(struct mm_struct *mm, int pgn, int *fpn, struct pcb_t *caller)
     else{
       __swap_cp_page(caller->active_mswp, swpfpn, caller->mram, vicpgn);
 
-      __swap_cp_page(caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn); // Corrected line
+      __swap_cp_page(caller->mswp[tgtswp_type], tgtfpn, caller->mram, vicpgn); 
       MEMPHY_put_freefp(caller->mswp[tgtswp_type], tgtfpn);
       pte_set_swap(&caller->mm->pgd[vicpgn], tgtswp_type, swpfpn);
       pte_set_fpn(&caller->mm->pgd[pgn], vicpgn);
@@ -341,7 +358,10 @@ int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value)
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   
   if(currg == NULL || cur_vma == NULL) /* Invalid memory identify */
-	  return -1;
+  {
+    printf("Invalid memory identify\n");
+    return -1;
+  }
 
   pg_setval(caller->mm, currg->rg_start + offset, value, caller);
 

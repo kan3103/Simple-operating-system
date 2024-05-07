@@ -62,7 +62,6 @@ int run(struct pcb_t * proc) {
 #ifdef CPU_TLB 
 		stat = tlballoc(proc, ins.arg_0, ins.arg_1);
 #elif defined(MM_PAGING)
-
 		stat = pgalloc(proc, ins.arg_0, ins.arg_1);
 #else
 		stat = alloc(proc, ins.arg_0, ins.arg_1);
@@ -102,5 +101,3 @@ int run(struct pcb_t * proc) {
 	return stat;
 
 }
-
-

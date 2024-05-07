@@ -81,5 +81,8 @@ struct memphy_struct {
    struct framephy_struct *free_fp_list;
    struct framephy_struct *used_fp_list;
 };
-
+struct tlb_entry {
+  int pid;
+  BYTE valid;
+};
 #endif

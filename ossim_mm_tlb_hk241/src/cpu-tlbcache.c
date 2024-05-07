@@ -20,6 +20,8 @@
 #include "mm.h"
 #include <stdlib.h>
 
+
+struct tlb_entry *tlb_entries;
 #define init_tlbcache(mp,sz,...) init_memphy(mp, sz, (1, ##__VA_ARGS__))
 
 /*
@@ -29,12 +31,17 @@
  *  @pgnum: page number
  *  @value: obtained value
  */
-int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE value)
+int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE* value)
 {
    /* TODO: the identify info is mapped to 
     *      cache line by employing:
     *      direct mapped, associated mapping etc.
     */
+     // Search for the page number in the TLB
+   if(tlb_entries[pgnum].valid==0) return 0;
+   if(tlb_entries[pgnum].pid==pid){
+      TLBMEMPHY_read(mp,pgnum,value);
+   };
    return 0;
 }
 
@@ -51,6 +58,9 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
     *      cache line by employing:
     *      direct mapped, associated mapping etc.
     */
+   TLBMEMPHY_write(mp,pgnum,value);
+   tlb_entries[pgnum].pid=pid;
+   tlb_entries[pgnum].valid=1;
    return 0;
 }
 
@@ -114,7 +124,7 @@ int init_tlbmemphy(struct memphy_struct *mp, int max_size)
    mp->maxsz = max_size;
 
    mp->rdmflg = 1;
-
+   tlb_entries = malloc(max_size*sizeof(struct tlb_entry));
    return 0;
 }
 
