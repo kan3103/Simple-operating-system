@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 static BYTE _ram[RAM_SIZE];
-
+extern FILE* output_file;
 static struct {
 	uint32_t proc;	// ID of process currently uses this page
 	int index;	// Index of the page in the list of pages allocated
@@ -38,20 +38,24 @@ static addr_t get_second_lv(addr_t addr) {
 	return (addr >> OFFSET_LEN) - (get_first_lv(addr) << PAGE_LEN);
 }
 
+
 /* Search for page table table from the a segment table */
 static struct trans_table_t * get_trans_table(
-		addr_t index, 	// Segment level index
-		struct page_table_t * page_table) { // first level table
-	
-	/* DO NOTHING HERE. This mem is obsoleted */
+        addr_t index,          // Segment level index
+        struct page_table_t *page_table) { // first level table
+    if (page_table == NULL || page_table->size == 0) {
+        return NULL;
+    }
 
-	int i;
-	for (i = 0; i < page_table->size; i++) {
-		// Enter your code here
-	}
-	return NULL;
-
+    int i;
+    for (i = 0; i < page_table->size; i++) {
+        if (page_table->table[i].v_index == index) {
+            return (struct trans_table_t *)&(page_table->table[i]);
+        }
+    }
+    return NULL;
 }
+
 
 /* Translate virtual address to physical address. If [virtual_addr] is valid,
  * return 1 and write its physical counterpart to [physical_addr].
@@ -149,7 +153,17 @@ void dump(void) {
 	for (i = 0; i < NUM_PAGES; i++) {
 		if (_mem_stat[i].proc != 0) {
 			printf("%03d: ", i);
+			fprintf(output_file,"%03d: ", i);
 			printf("%05x-%05x - PID: %02d (idx %03d, nxt: %03d)\n",
+			
+				i << OFFSET_LEN,
+				((i + 1) << OFFSET_LEN) - 1,
+				_mem_stat[i].proc,
+				_mem_stat[i].index,
+				_mem_stat[i].next
+			);
+			fprintf(output_file,"%05x-%05x - PID: %02d (idx %03d, nxt: %03d)\n",
+			
 				i << OFFSET_LEN,
 				((i + 1) << OFFSET_LEN) - 1,
 				_mem_stat[i].proc,
@@ -163,11 +177,10 @@ void dump(void) {
 				
 				if (_ram[j] != 0) {
 					printf("\t%05x: %02x\n", j, _ram[j]);
+					fprintf(output_file,"\t%05x: %02x\n", j, _ram[j]);
 				}
 					
 			}
 		}
 	}
 }
-
-

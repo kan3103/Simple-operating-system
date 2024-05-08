@@ -20,6 +20,8 @@
 #include "mm.h"
 #include <stdlib.h>
 
+
+struct tlb_entry *tlb_entries;
 #define init_tlbcache(mp,sz,...) init_memphy(mp, sz, (1, ##__VA_ARGS__))
 
 /*
@@ -29,12 +31,20 @@
  *  @pgnum: page number
  *  @value: obtained value
  */
-int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE value)
+int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE* value)
 {
    /* TODO: the identify info is mapped to 
     *      cache line by employing:
     *      direct mapped, associated mapping etc.
     */
+     // Search for the page number in the TLB
+   if(tlb_entries[pgnum].valid==0) return 0;
+ 
+
+   if(tlb_entries[pgnum].pid==pid){
+      TLBMEMPHY_read(mp,pgnum,value);
+      return 1;
+   };
    return 0;
 }
 
@@ -51,9 +61,17 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
     *      cache line by employing:
     *      direct mapped, associated mapping etc.
     */
+   TLBMEMPHY_write(mp,pgnum,value);
+   tlb_entries[pgnum].pid=pid;
+   tlb_entries[pgnum].valid=1;
    return 0;
 }
-
+int tlb_cache_free(struct memphy_struct *mp, int pid, int pgnum){
+   TLBMEMPHY_write(mp,pgnum,0);
+   tlb_entries[pgnum].pid=0;
+   tlb_entries[pgnum].valid=0;
+   return 0;
+}
 /*
  *  TLBMEMPHY_read natively supports MEMPHY device interfaces
  *  @mp: memphy struct
@@ -62,12 +80,12 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
  */
 int TLBMEMPHY_read(struct memphy_struct * mp, int addr, BYTE *value)
 {
+   
    if (mp == NULL)
      return -1;
 
    /* TLB cached is random access by native */
    *value = mp->storage[addr];
-
    return 0;
 }
 
@@ -114,7 +132,11 @@ int init_tlbmemphy(struct memphy_struct *mp, int max_size)
    mp->maxsz = max_size;
 
    mp->rdmflg = 1;
-
+   tlb_entries = malloc(max_size*sizeof(struct tlb_entry));
+   for(int i=0;i<max_size;++i){
+      tlb_entries[i].valid=0;
+      tlb_entries[i].pid=-1;
+   }
    return 0;
 }
 

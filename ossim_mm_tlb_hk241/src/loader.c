@@ -5,6 +5,7 @@
 #include <string.h>
 
 static uint32_t avail_pid = 1;
+extern FILE *output_file;
 
 #define OPT_CALC	"calc"
 #define OPT_ALLOC	"alloc"
@@ -25,6 +26,7 @@ static enum ins_opcode_t get_opcode(char * opt) {
 		return WRITE;
 	}else{
 		printf("Opcode: %s\n", opt);
+		fprintf(output_file,"Opcode: %s\n", opt);
 		exit(1);
 	}
 }
@@ -43,6 +45,7 @@ struct pcb_t * load(const char * path) {
 	FILE * file;
 	if ((file = fopen(path, "r")) == NULL) {
 		printf("Cannot find process description at '%s'\n", path);
+		fprintf(output_file,"Cannot find process description at '%s'\n", path);
 		exit(1);		
 	}
 	char opcode[10];
@@ -81,6 +84,7 @@ struct pcb_t * load(const char * path) {
 			break;	
 		default:
 			printf("Opcode: %s\n", opcode);
+			fprintf(output_file,"Opcode: %s\n", opcode);
 			exit(1);
 		}
 	}

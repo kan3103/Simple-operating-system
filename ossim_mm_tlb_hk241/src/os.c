@@ -13,6 +13,8 @@
 static int time_slot;
 static int num_cpus;
 static int done = 0;
+FILE *output_file;
+
 
 #ifdef CPU_TLB
 static int tlbsz;
@@ -55,25 +57,34 @@ static void * cpu_routine(void * args) {
 	struct pcb_t * proc = NULL;
 	while (1) {
 		/* Check the status of current process */
-		if (proc == NULL) {
+		while(timer_id->time_wait==0);
+		
+		while(timer_id->cpu_wait==0); //wait for load
+		
+		if (proc == NULL && !done) {
 			/* No process is running, the we load new process from
 		 	* ready queue */
 			proc = get_proc();
+	
 			if (proc == NULL) {
                            next_slot(timer_id);
                            continue; /* First load failed. skip dummy load */
-                        }
-		}else if (proc->pc == proc->code->size) {
+            }
+		}else if (proc && proc->pc == proc->code->size) {
 			/* The porcess has finish it job */
 			printf("\tCPU %d: Processed %2d has finished\n",
 				id ,proc->pid);
+			fprintf(output_file, "\tCPU %d: Processed %2d has finished\n",
+				id ,proc->pid);	
 			free(proc);
 			proc = get_proc();
 			time_left = 0;
-		}else if (time_left == 0) {
+		}else if (proc && time_left == 0) {
 			/* The process has done its job in current time slot */
 			printf("\tCPU %d: Put process %2d to run queue\n",
 				id, proc->pid);
+			fprintf(output_file, "\tCPU %d: Put process %2d to run queue\n",
+				id, proc->pid);	
 			put_proc(proc);
 			proc = get_proc();
 		}
@@ -82,6 +93,7 @@ static void * cpu_routine(void * args) {
 		if (proc == NULL && done) {
 			/* No process to run, exit */
 			printf("\tCPU %d stopped\n", id);
+			fprintf(output_file, "\tCPU %d stopped\n", id);	
 			break;
 		}else if (proc == NULL) {
 			/* There may be new processes to run in
@@ -90,6 +102,8 @@ static void * cpu_routine(void * args) {
 			continue;
 		}else if (time_left == 0) {
 			printf("\tCPU %d: Dispatched process %2d\n",
+				id, proc->pid);
+			fprintf(output_file, "\tCPU %d: Dispatched process %2d\n",
 				id, proc->pid);
 			time_left = time_slot;
 		}
@@ -105,6 +119,9 @@ static void * cpu_routine(void * args) {
 
 static void * ld_routine(void * args) {
 #ifdef MM_PAGING
+#ifdef CPU_TLB
+	struct memphy_struct* tlb = ((struct mmpaging_ld_args *)args)->tlb;
+#endif
 	struct memphy_struct* mram = ((struct mmpaging_ld_args *)args)->mram;
 	struct memphy_struct** mswp = ((struct mmpaging_ld_args *)args)->mswp;
 	struct memphy_struct* active_mswp = ((struct mmpaging_ld_args *)args)->active_mswp;
@@ -114,35 +131,114 @@ static void * ld_routine(void * args) {
 #endif
 	int i = 0;
 	printf("ld_routine\n");
+	fprintf(output_file, "ld_routine\n");
 	while (i < num_processes) {
+		while(timer_id->time_wait == 0); 
 		struct pcb_t * proc = load(ld_processes.path[i]);
 #ifdef MLQ_SCHED
 		proc->prio = ld_processes.prio[i];
 #endif
 		while (current_time() < ld_processes.start_time[i]) {
+			wait_cpu();
 			next_slot(timer_id);
+			while(timer_id->time_wait==0){};
 		}
 #ifdef MM_PAGING
 		proc->mm = malloc(sizeof(struct mm_struct));
 		init_mm(proc->mm, proc);
+	#ifdef CPU_TLB
+		proc->tlb = tlb;
+	#endif
 		proc->mram = mram;
 		proc->mswp = mswp;
 		proc->active_mswp = active_mswp;
 #endif
 		printf("\tLoaded a process at %s, PID: %d PRIO: %ld\n",
 			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
+		fprintf(output_file,"\tLoaded a process at %s, PID: %d PRIO: %ld\n",
+			ld_processes.path[i], proc->pid, ld_processes.prio[i]);
 		add_proc(proc);
 		free(ld_processes.path[i]);
 		i++;
+		wait_cpu();
 		next_slot(timer_id);
 	}
 	free(ld_processes.path);
 	free(ld_processes.start_time);
 	done = 1;
+	wait_cpu();
 	detach_event(timer_id);
 	pthread_exit(NULL);
 }
 
+void merge(unsigned long *start_time, unsigned long *prio, char **path, int left, int mid, int right) {
+    int i, j, k;
+    int n1 = mid - left + 1;
+    int n2 = right - mid;
+
+
+    unsigned long L_start_time[n1], R_start_time[n2];
+    unsigned long L_prio[n1], R_prio[n2];
+    char *L_path[n1], *R_path[n2];
+
+
+    for (i = 0; i < n1; i++) {
+        L_start_time[i] = start_time[left + i];
+        L_prio[i] = prio[left + i];
+        L_path[i] = path[left + i];
+    }
+    for (j = 0; j < n2; j++) {
+        R_start_time[j] = start_time[mid + 1 + j];
+        R_prio[j] = prio[mid + 1 + j];
+        R_path[j] = path[mid + 1 + j];
+    }
+
+
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        if (L_start_time[i] < R_start_time[j] || (L_start_time[i] == R_start_time[j] && L_prio[i] < R_prio[j])) {
+            start_time[k] = L_start_time[i];
+            prio[k] = L_prio[i];
+            path[k] = L_path[i];
+            i++;
+        } else {
+            start_time[k] = R_start_time[j];
+            prio[k] = R_prio[j];
+            path[k] = R_path[j];
+            j++;
+        }
+        k++;
+    }
+
+    while (i < n1) {
+        start_time[k] = L_start_time[i];
+        prio[k] = L_prio[i];
+        path[k] = L_path[i];
+        i++;
+        k++;
+    }
+
+    while (j < n2) {
+        start_time[k] = R_start_time[j];
+        prio[k] = R_prio[j];
+        path[k] = R_path[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(unsigned long *start_time, unsigned long *prio, char **path, int left, int right) {
+    if (left < right) {
+        int mid = left + (right - left) / 2;
+
+        mergeSort(start_time, prio, path, left, mid);
+        mergeSort(start_time, prio, path, mid + 1, right);
+
+        merge(start_time, prio, path, left, mid, right);
+    }
+}
 static void read_config(const char * path) {
 	FILE * file;
 	if ((file = fopen(path, "r")) == NULL) {
@@ -209,8 +305,10 @@ static void read_config(const char * path) {
 #else
 		fscanf(file, "%lu %s\n", &ld_processes.start_time[i], proc);
 #endif
+
 		strcat(ld_processes.path[i], proc);
 	}
+	mergeSort(ld_processes.start_time, ld_processes.prio, ld_processes.path, 0, num_processes-1); // Fix nếu thứ tự time_start nhập ko theo thứ tự
 }
 
 int main(int argc, char * argv[]) {
@@ -221,8 +319,15 @@ int main(int argc, char * argv[]) {
 	}
 	char path[100];
 	path[0] = '\0';
+	char pathout[100];
+	pathout[0] = '\0';
 	strcat(path, "input/");
+	strcat(pathout, "output/");
 	strcat(path, argv[1]);
+	strcat(pathout, argv[1]);
+	strcat(pathout, ".output");
+	output_file = fopen(pathout, "w+");
+
 	read_config(path);
 
 	pthread_t * cpu = (pthread_t*)malloc(num_cpus * sizeof(pthread_t));
@@ -250,11 +355,10 @@ int main(int argc, char * argv[]) {
 
 	struct memphy_struct mram;
 	struct memphy_struct mswp[PAGING_MAX_MMSWP];
-
+	
 
 	/* Create MEM RAM */
 	init_memphy(&mram, memramsz, rdmflag);
-
 	/* Create all MEM SWAP */ 
 	int sit;
 	for(sit = 0; sit < PAGING_MAX_MMSWP; sit++)
@@ -280,7 +384,6 @@ int main(int argc, char * argv[]) {
 
 	/* Init scheduler */
 	init_scheduler();
-
 	/* Run CPU and loader */
 #ifdef MM_PAGING
 	pthread_create(&ld, NULL, ld_routine, (void*)mm_ld_args);
@@ -300,10 +403,7 @@ int main(int argc, char * argv[]) {
 
 	/* Stop timer */
 	stop_timer();
-
+	fclose(output_file);
 	return 0;
 
 }
-
-
-

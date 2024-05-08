@@ -72,6 +72,7 @@ int run(struct pcb_t * proc) {
 		stat = tlbfree_data(proc, ins.arg_0);
 #elif defined(MM_PAGING)
 		stat = pgfree_data(proc, ins.arg_0);
+		
 #else
 		stat = free_data(proc, ins.arg_0);
 #endif
@@ -100,5 +101,3 @@ int run(struct pcb_t * proc) {
 	return stat;
 
 }
-
-

@@ -7,7 +7,7 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+extern FILE *output_file;
 /* 
  * init_pte - Initialize PTE entry
  */
@@ -102,10 +102,17 @@ int vmap_page_range(struct pcb_t *caller, // process call
 
    /* Tracking for later page replacement activities (if needed)
     * Enqueue new usage page */
-   enlist_pgn_node(&caller->mm->fifo_pgn, pgn+pgit);
-
-
-  return 0;
+   for(pgit = 0; pgit < pgnum; pgit++)
+   {
+     fpit = fpit->fp_next;
+     pgn = PAGING_PGN((addr + pgit * PAGING_PAGESZ));
+     if(fpit){
+        pte_set_fpn(&caller->mm->pgd[pgn], fpit->fpn);
+        enlist_pgn_node(&caller->mm->fifo_pgn, pgn);
+     }
+    }
+    ret_rg->rg_end += (pgit - 1) * PAGING_PAGESZ;
+    return 0;
 }
 
 /* 
@@ -118,18 +125,75 @@ int vmap_page_range(struct pcb_t *caller, // process call
 int alloc_pages_range(struct pcb_t *caller, int req_pgnum, struct framephy_struct** frm_lst)
 {
   int pgit, fpn;
-  //struct framephy_struct *newfp_str;
+  struct framephy_struct *newfp_str;
 
   for(pgit = 0; pgit < req_pgnum; pgit++)
   {
     if(MEMPHY_get_freefp(caller->mram, &fpn) == 0)
    {
-     
-   } else {  // ERROR CODE of obtaining somes but not enough frames
-   } 
- }
+    newfp_str = (struct framephy_struct *)malloc (sizeof(struct framephy_struct));
+    newfp_str->fpn = fpn;
+    newfp_str->owner = caller->mm;
+    if(!*frm_lst){
+      *frm_lst = newfp_str;
+    }
+    else{
+      newfp_str->fp_next = *frm_lst;
+      *frm_lst = newfp_str;
+    }
+      } 
+    else {  // ERROR CODE of obtaining somes but not enough frames
+      int victim_fpn;
+      int victim_pgn;
+      int victim_pte;
+      int swpfpn = -1;
+      if(find_victim_page(caller->mm, &victim_pgn) < 0){
+        return -3000; // Out of memory
+      }
+      victim_pte = caller->mm->pgd[victim_pgn];
+      victim_fpn = PAGING_FPN(victim_pte);
 
-  return 0;
+      newfp_str = (struct framephy_struct *)malloc (sizeof(struct framephy_struct));
+      newfp_str->fpn = victim_fpn;
+      newfp_str->owner = caller->mm;
+
+      if(!*frm_lst){
+        *frm_lst = newfp_str;
+      }
+      else{
+        newfp_str->fp_next = *frm_lst;
+        *frm_lst = newfp_str;
+      }
+
+      
+      int i = 0;
+      if(MEMPHY_get_freefp(caller->active_mswp, &swpfpn) == 0){
+        __swap_cp_page(caller->mram, victim_fpn, caller->active_mswp, swpfpn);
+        struct memphy_struct *mswp = (struct memphy_struct *)caller->mswp;
+        for (i = 0; i < PAGING_MAX_MMSWP; i++){
+          if(mswp + i == caller->active_mswp){
+            break;
+          }
+        }
+      }
+      else{
+        struct memphy_struct *mswp = (struct memphy_struct *)caller->mswp;
+        swpfpn = -1;
+        for (i = 0; i < PAGING_MAX_MMSWP; i++){
+          if(MEMPHY_get_freefp(mswp + i, &swpfpn) == 0){
+            break;
+          }
+        }
+      }
+      if(swpfpn < 0){
+        return -3000; // Out of memory
+      }
+      pte_set_swap(&caller->mm->pgd[victim_pgn], i, swpfpn);  
+    }
+    
+ }
+  
+    return 0;
 }
 
 
@@ -164,6 +228,7 @@ int vm_map_ram(struct pcb_t *caller, int astart, int aend, int mapstart, int inc
   {
 #ifdef MMDBG
      printf("OOM: vm_map_ram out of memory \n");
+     fprintf(output_file,"OOM: vm_map_ram out of memory \n");
 #endif
      return -1;
   }
@@ -171,6 +236,7 @@ int vm_map_ram(struct pcb_t *caller, int astart, int aend, int mapstart, int inc
   /* it leaves the case of memory is enough but half in ram, half in swap
    * do the swaping all to swapper to get the all in ram */
   vmap_page_range(caller, mapstart, incpgnum, frm_lst, ret_rg);
+  
 
   return 0;
 }
@@ -261,14 +327,19 @@ int print_list_fp(struct framephy_struct *ifp)
    struct framephy_struct *fp = ifp;
  
    printf("print_list_fp: ");
-   if (fp == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_fp: ");
+   if (fp == NULL) {printf("NULL list\n");
+   fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (fp != NULL )
    {
        printf("fp[%d]\n",fp->fpn);
+       fprintf(output_file,"fp[%d]\n",fp->fpn);
        fp = fp->fp_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -277,14 +348,19 @@ int print_list_rg(struct vm_rg_struct *irg)
    struct vm_rg_struct *rg = irg;
  
    printf("print_list_rg: ");
-   if (rg == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_rg: ");
+   if (rg == NULL) {printf("NULL list\n");
+   fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (rg != NULL)
    {
        printf("rg[%ld->%ld]\n",rg->rg_start, rg->rg_end);
+       fprintf(output_file,"rg[%ld->%ld]\n",rg->rg_start, rg->rg_end);
        rg = rg->rg_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -293,28 +369,36 @@ int print_list_vma(struct vm_area_struct *ivma)
    struct vm_area_struct *vma = ivma;
  
    printf("print_list_vma: ");
-   if (vma == NULL) {printf("NULL list\n"); return -1;}
+  fprintf(output_file,"print_list_vma: ");
+   if (vma == NULL) {printf("NULL list\n");fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (vma != NULL )
    {
        printf("va[%ld->%ld]\n",vma->vm_start, vma->vm_end);
+       fprintf(output_file,"va[%ld->%ld]\n",vma->vm_start, vma->vm_end);
        vma = vma->vm_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
 int print_list_pgn(struct pgn_t *ip)
 {
    printf("print_list_pgn: ");
-   if (ip == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_pgn: ");
+   if (ip == NULL) {printf("NULL list\n");fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (ip != NULL )
    {
        printf("va[%d]-\n",ip->pgn);
+       fprintf(output_file,"va[%d]-\n",ip->pgn);
        ip = ip->pg_next;
    }
-   printf("n");
+   printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -332,13 +416,16 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   pgn_end = PAGING_PGN(end);
 
   printf("print_pgtbl: %d - %d", start, end);
-  if (caller == NULL) {printf("NULL caller\n"); return -1;}
-    printf("\n");
+  fprintf(output_file,"print_pgtbl: %d - %d", start, end);
+  if (caller == NULL) {printf("NULL caller\n"); fprintf(output_file,"NULL caller\n");return -1;}
+  fprintf(output_file,"\n");
+  printf("\n");
 
 
   for(pgit = pgn_start; pgit < pgn_end; pgit++)
   {
      printf("%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
+     fprintf(output_file,"%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
   }
 
   return 0;
