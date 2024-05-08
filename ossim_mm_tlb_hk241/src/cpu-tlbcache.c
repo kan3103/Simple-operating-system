@@ -39,8 +39,11 @@ int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE* value)
     */
      // Search for the page number in the TLB
    if(tlb_entries[pgnum].valid==0) return 0;
+ 
+
    if(tlb_entries[pgnum].pid==pid){
       TLBMEMPHY_read(mp,pgnum,value);
+      return 1;
    };
    return 0;
 }
@@ -72,12 +75,12 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
  */
 int TLBMEMPHY_read(struct memphy_struct * mp, int addr, BYTE *value)
 {
+   
    if (mp == NULL)
      return -1;
 
    /* TLB cached is random access by native */
    *value = mp->storage[addr];
-
    return 0;
 }
 
@@ -125,6 +128,10 @@ int init_tlbmemphy(struct memphy_struct *mp, int max_size)
 
    mp->rdmflg = 1;
    tlb_entries = malloc(max_size*sizeof(struct tlb_entry));
+   for(int i=0;i<max_size;++i){
+      tlb_entries[i].valid=0;
+      tlb_entries[i].pid=-1;
+   }
    return 0;
 }
 

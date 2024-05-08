@@ -119,6 +119,9 @@ static void * cpu_routine(void * args) {
 
 static void * ld_routine(void * args) {
 #ifdef MM_PAGING
+#ifdef CPU_TLB
+	struct memphy_struct* tlb = ((struct mmpaging_ld_args *)args)->tlb;
+#endif
 	struct memphy_struct* mram = ((struct mmpaging_ld_args *)args)->mram;
 	struct memphy_struct** mswp = ((struct mmpaging_ld_args *)args)->mswp;
 	struct memphy_struct* active_mswp = ((struct mmpaging_ld_args *)args)->active_mswp;
@@ -143,6 +146,9 @@ static void * ld_routine(void * args) {
 #ifdef MM_PAGING
 		proc->mm = malloc(sizeof(struct mm_struct));
 		init_mm(proc->mm, proc);
+	#ifdef CPU_TLB
+		proc->tlb = tlb;
+	#endif
 		proc->mram = mram;
 		proc->mswp = mswp;
 		proc->active_mswp = active_mswp;
@@ -311,8 +317,6 @@ int main(int argc, char * argv[]) {
 		printf("Usage: os [path to configure file]\n");
 		return 1;
 	}
-	// uint32_t temp =2147483649;
-	// printf("%d",PAGING_FPN(temp));
 	char path[100];
 	path[0] = '\0';
 	char pathout[100];
