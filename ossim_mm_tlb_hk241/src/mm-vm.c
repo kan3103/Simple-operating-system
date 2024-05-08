@@ -150,6 +150,20 @@ int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr
  *@size: allocated size 
  *
  */
+void _print_rg_alloc(struct vm_rg_struct *irg){
+  struct vm_rg_struct *rg = irg;
+
+  if (rg == NULL) {printf("NULL list\n"); return ;}
+  printf("Check remaining registers\n");
+  for (int i=0;i<PAGING_MAX_SYMTBL_SZ;++i)
+  {
+   if((rg+i)->rg_start<(rg+i)->rg_end){
+    printf("rg %d\n",i);
+    printf("rg[%ld->%ld]\n",(rg+i)->rg_start , (rg+i)->rg_end);
+   }
+  }
+   printf("\n");
+}
 int __free(struct pcb_t *caller, int vmaid, int rgid)
 {
   struct vm_rg_struct *rgnode = malloc(sizeof(struct vm_rg_struct)); //khai bao khu vuc trong' moi bang heap
@@ -169,7 +183,9 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   freed_rg->rg_start = freed_rg->rg_end = 0;
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
+  printf("Check free rg\n");
   print_list_rg(caller->mm->mmap->vm_freerg_list);
+  _print_rg_alloc(caller->mm->symrgtbl);
   return 0;
 }
 
@@ -308,7 +324,10 @@ int pg_setval(struct mm_struct *mm, int addr, BYTE value, struct pcb_t *caller)
 int __read(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE *data)
 {
   struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
-
+  if(currg->rg_end==currg->rg_start){ 
+      printf("Segmentation fault\n");
+      return -1;
+  };
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
 
   if(currg == NULL || cur_vma == NULL) /* Invalid memory identify */
@@ -329,7 +348,7 @@ int pgread(
 {
   BYTE data;
   int val = __read(proc, 0, source, offset, &data);
-
+  if (val==-1) return val;
   destination = (uint32_t) data;
 #ifdef IODUMP
   printf("read region=%d offset=%d value=%d\n", source, offset, data);
@@ -355,7 +374,10 @@ int pgread(
 int __write(struct pcb_t *caller, int vmaid, int rgid, int offset, BYTE value)
 {
   struct vm_rg_struct *currg = get_symrg_byid(caller->mm, rgid);
-
+  if(currg->rg_end==currg->rg_start){ 
+    printf("Segmentation fault\n");
+    return 0;
+  };
   struct vm_area_struct *cur_vma = get_vma_by_num(caller->mm, vmaid);
   
   if(currg == NULL || cur_vma == NULL) /* Invalid memory identify */

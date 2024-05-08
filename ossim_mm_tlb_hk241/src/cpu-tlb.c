@@ -62,7 +62,9 @@ int tlbfree_data(struct pcb_t *proc, uint32_t reg_index)
 
   /* TODO update TLB CACHED frame num of freed page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
-
+  int pgnum = PAGING_PGN(proc->mm->symrgtbl[reg_index].rg_start);
+  printf("in pgnum:  %d\n",pgnum);
+  tlb_cache_free(proc->tlb, proc->pid, pgnum);
   return 0;
 }
 
@@ -78,7 +80,14 @@ int tlbread(struct pcb_t * proc, uint32_t source,
 {
   int val;
   BYTE data, frmnum = -1;
+  if(proc->mm->symrgtbl[source].rg_start==proc->mm->symrgtbl[source].rg_end||
+  proc->mm->symrgtbl[source].rg_start + offset>proc->mm->symrgtbl[source].rg_end)
+  {
+    printf("Segmentation fault read\n");
+    return -1;
+  };
 	int pgnum = PAGING_PGN(proc->mm->symrgtbl[source].rg_start + offset);
+  printf("pagnum nha : %d",pgnum);
   int off = PAGING_OFFST(proc->mm->symrgtbl[source].rg_start + offset);
   tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
   /* TODO retrieve TLB CACHED frame num of accessing page(s)*/
@@ -123,6 +132,12 @@ int tlbwrite(struct pcb_t * proc, BYTE data,
   BYTE frmnum = -1;
   int pgnum = PAGING_PGN(proc->mm->symrgtbl[destination].rg_start + offset);
   int off = PAGING_OFFST(proc->mm->symrgtbl[destination].rg_start + offset);
+  if(proc->mm->symrgtbl[destination].rg_start==proc->mm->symrgtbl[destination].rg_end||
+    proc->mm->symrgtbl[destination].rg_start + offset>proc->mm->symrgtbl[destination].rg_end)
+  {
+    printf("Segmentation fault write\n");
+    return -1;
+  };
   tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
   /* TODO retrieve TLB CACHED frame num of accessing page(s))*/
   /* by using tlb_cache_read()/tlb_cache_write()

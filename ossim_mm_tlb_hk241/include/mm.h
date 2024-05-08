@@ -130,6 +130,7 @@ int TLBMEMPHY_write(struct memphy_struct * mp, int addr, BYTE data);
 int TLBMEMPHY_dump(struct memphy_struct * mp);
 int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE* value);
 int tlb_cache_write(struct memphy_struct * mp, int pid, int pgnum, BYTE value);
+int tlb_cache_free(struct memphy_struct *mp, int pid, int pgnum);
 /* VM prototypes */
 int pgalloc(struct pcb_t *proc, uint32_t size, uint32_t reg_index);
 int pgfree_data(struct pcb_t *proc, uint32_t reg_index);

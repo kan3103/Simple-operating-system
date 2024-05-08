@@ -66,7 +66,12 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
    tlb_entries[pgnum].valid=1;
    return 0;
 }
-
+int tlb_cache_free(struct memphy_struct *mp, int pid, int pgnum){
+   TLBMEMPHY_write(mp,pgnum,0);
+   tlb_entries[pgnum].pid=0;
+   tlb_entries[pgnum].valid=0;
+   return 0;
+}
 /*
  *  TLBMEMPHY_read natively supports MEMPHY device interfaces
  *  @mp: memphy struct
