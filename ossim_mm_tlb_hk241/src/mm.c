@@ -7,7 +7,7 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
-
+extern FILE *output_file;
 /* 
  * init_pte - Initialize PTE entry
  */
@@ -228,6 +228,7 @@ int vm_map_ram(struct pcb_t *caller, int astart, int aend, int mapstart, int inc
   {
 #ifdef MMDBG
      printf("OOM: vm_map_ram out of memory \n");
+     fprintf(output_file,"OOM: vm_map_ram out of memory \n");
 #endif
      return -1;
   }
@@ -326,14 +327,19 @@ int print_list_fp(struct framephy_struct *ifp)
    struct framephy_struct *fp = ifp;
  
    printf("print_list_fp: ");
-   if (fp == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_fp: ");
+   if (fp == NULL) {printf("NULL list\n");
+   fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (fp != NULL )
    {
        printf("fp[%d]\n",fp->fpn);
+       fprintf(output_file,"fp[%d]\n",fp->fpn);
        fp = fp->fp_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -342,14 +348,19 @@ int print_list_rg(struct vm_rg_struct *irg)
    struct vm_rg_struct *rg = irg;
  
    printf("print_list_rg: ");
-   if (rg == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_rg: ");
+   if (rg == NULL) {printf("NULL list\n");
+   fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (rg != NULL)
    {
        printf("rg[%ld->%ld]\n",rg->rg_start, rg->rg_end);
+       fprintf(output_file,"rg[%ld->%ld]\n",rg->rg_start, rg->rg_end);
        rg = rg->rg_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -358,28 +369,36 @@ int print_list_vma(struct vm_area_struct *ivma)
    struct vm_area_struct *vma = ivma;
  
    printf("print_list_vma: ");
-   if (vma == NULL) {printf("NULL list\n"); return -1;}
+  fprintf(output_file,"print_list_vma: ");
+   if (vma == NULL) {printf("NULL list\n");fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (vma != NULL )
    {
        printf("va[%ld->%ld]\n",vma->vm_start, vma->vm_end);
+       fprintf(output_file,"va[%ld->%ld]\n",vma->vm_start, vma->vm_end);
        vma = vma->vm_next;
    }
    printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
 int print_list_pgn(struct pgn_t *ip)
 {
    printf("print_list_pgn: ");
-   if (ip == NULL) {printf("NULL list\n"); return -1;}
+   fprintf(output_file,"print_list_pgn: ");
+   if (ip == NULL) {printf("NULL list\n");fprintf(output_file,"NULL list\n"); return -1;}
    printf("\n");
+   fprintf(output_file,"\n");
    while (ip != NULL )
    {
        printf("va[%d]-\n",ip->pgn);
+       fprintf(output_file,"va[%d]-\n",ip->pgn);
        ip = ip->pg_next;
    }
-   printf("n");
+   printf("\n");
+   fprintf(output_file,"\n");
    return 0;
 }
 
@@ -397,13 +416,16 @@ int print_pgtbl(struct pcb_t *caller, uint32_t start, uint32_t end)
   pgn_end = PAGING_PGN(end);
 
   printf("print_pgtbl: %d - %d", start, end);
-  if (caller == NULL) {printf("NULL caller\n"); return -1;}
-    printf("\n");
+  fprintf(output_file,"print_pgtbl: %d - %d", start, end);
+  if (caller == NULL) {printf("NULL caller\n"); fprintf(output_file,"NULL caller\n");return -1;}
+  fprintf(output_file,"\n");
+  printf("\n");
 
 
   for(pgit = pgn_start; pgit < pgn_end; pgit++)
   {
      printf("%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
+     fprintf(output_file,"%08ld: %08x\n", pgit * sizeof(uint32_t), caller->mm->pgd[pgit]);
   }
 
   return 0;

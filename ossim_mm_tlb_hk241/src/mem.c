@@ -6,7 +6,7 @@
 #include <stdio.h>
 
 static BYTE _ram[RAM_SIZE];
-
+extern FILE* output_file;
 static struct {
 	uint32_t proc;	// ID of process currently uses this page
 	int index;	// Index of the page in the list of pages allocated
@@ -153,7 +153,17 @@ void dump(void) {
 	for (i = 0; i < NUM_PAGES; i++) {
 		if (_mem_stat[i].proc != 0) {
 			printf("%03d: ", i);
+			fprintf(output_file,"%03d: ", i);
 			printf("%05x-%05x - PID: %02d (idx %03d, nxt: %03d)\n",
+			
+				i << OFFSET_LEN,
+				((i + 1) << OFFSET_LEN) - 1,
+				_mem_stat[i].proc,
+				_mem_stat[i].index,
+				_mem_stat[i].next
+			);
+			fprintf(output_file,"%05x-%05x - PID: %02d (idx %03d, nxt: %03d)\n",
+			
 				i << OFFSET_LEN,
 				((i + 1) << OFFSET_LEN) - 1,
 				_mem_stat[i].proc,
@@ -167,6 +177,7 @@ void dump(void) {
 				
 				if (_ram[j] != 0) {
 					printf("\t%05x: %02x\n", j, _ram[j]);
+					fprintf(output_file,"\t%05x: %02x\n", j, _ram[j]);
 				}
 					
 			}

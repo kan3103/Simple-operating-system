@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <stdio.h> 
 #include <string.h> //thêm vào để sử dụng hàm strcpy và strcat
-
+extern FILE* output_file;
 /*
  *  MEMPHY_mv_csr - move MEMPHY cursor
  *  @mp: memphy struct
@@ -161,9 +161,11 @@ int MEMPHY_dump(struct memphy_struct * mp)
    /* TODO: Dump memphy content mp->storage for tracing the memory content */
    if(!mp || !mp->storage) return -1;
    printf("Dumping memphy content\n");
+    fprintf(output_file,"Dumping memphy content\n");
    for(int i = 0; i < mp->maxsz; i++){
      if(mp->storage[i] != 0){
        printf("Address: %d, Value: %d\n", i, mp->storage[i]);
+       fprintf(output_file,"Address: %d, Value: %d\n", i, mp->storage[i]);
      }
    }
    return 0;

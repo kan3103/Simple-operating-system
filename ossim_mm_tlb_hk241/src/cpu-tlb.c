@@ -15,6 +15,7 @@
 #include "mm.h"
 #include <stdlib.h>
 #include <stdio.h>
+extern FILE* output_file;
 #ifdef CPU_TLB
 int tlb_change_all_page_tables_of(struct pcb_t *proc,  struct memphy_struct * mp)
 {
@@ -63,7 +64,6 @@ int tlbfree_data(struct pcb_t *proc, uint32_t reg_index)
   /* TODO update TLB CACHED frame num of freed page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
   int pgnum = PAGING_PGN(proc->mm->symrgtbl[reg_index].rg_start);
-  printf("in pgnum:  %d\n",pgnum);
   tlb_cache_free(proc->tlb, proc->pid, pgnum);
   return 0;
 }
@@ -84,22 +84,28 @@ int tlbread(struct pcb_t * proc, uint32_t source,
   proc->mm->symrgtbl[source].rg_start + offset>proc->mm->symrgtbl[source].rg_end)
   {
     printf("Segmentation fault read\n");
+    fprintf(output_file,"Segmentation fault read\n");
     return -1;
   };
 	int pgnum = PAGING_PGN(proc->mm->symrgtbl[source].rg_start + offset);
-  printf("pagnum nha : %d",pgnum);
   int off = PAGING_OFFST(proc->mm->symrgtbl[source].rg_start + offset);
   tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
   /* TODO retrieve TLB CACHED frame num of accessing page(s)*/
   /* by using tlb_cache_read()/tlb_cache_write()*/
   /* frmnum is return value of tlb_cache_read/write value*/
 #ifdef IODUMP
-  if (frmnum >= 0)
+  if (frmnum >= 0){
     printf("TLB hit at read region=%d offset=%d\n", 
 	         source, offset);
-  else 
+    fprintf(output_file,"TLB hit at read region=%d offset=%d\n", 
+	         source, offset);
+  }
+  else {
     printf("TLB miss at read region=%d offset=%d\n", 
 	         source, offset);
+    fprintf(output_file,"TLB miss at read region=%d offset=%d\n", 
+	         source, offset);
+  }
 #ifdef PAGETBL_DUMP
   print_pgtbl(proc, 0, -1); //print max TBL
 #endif
@@ -121,6 +127,7 @@ int tlbread(struct pcb_t * proc, uint32_t source,
   TLBMEMPHY_dump(proc->tlb);
  // destination = (uint32_t) data;
   printf("data readed : %d\n", data);
+  fprintf(output_file,"data readed : %d\n", data);
   return val;
 }
 
@@ -136,6 +143,7 @@ int tlbwrite(struct pcb_t * proc, BYTE data,
     proc->mm->symrgtbl[destination].rg_start + offset>proc->mm->symrgtbl[destination].rg_end)
   {
     printf("Segmentation fault write\n");
+    fprintf(output_file,"Segmentation fault write\n");
     return -1;
   };
   tlb_cache_read(proc->tlb, proc->pid, pgnum, &frmnum);
@@ -144,12 +152,18 @@ int tlbwrite(struct pcb_t * proc, BYTE data,
   frmnum is return value of tlb_cache_read/write value*/
   
 #ifdef IODUMP
-  if (frmnum >= 0)
+  if (frmnum >= 0){
     printf("TLB hit at write region=%d offset=%d value=%d\n",
 	          destination, offset, data);
-	else
+    fprintf(output_file,"TLB hit at write region=%d offset=%d value=%d\n",
+	          destination, offset, data);
+  }
+	else{
     printf("TLB miss at write region=%d offset=%d value=%d\n",
             destination, offset, data);
+    fprintf(output_file, "TLB miss at write region=%d offset=%d value=%d\n",
+            destination, offset, data);       
+  }
 #ifdef PAGETBL_DUMP
   print_pgtbl(proc, 0, -1); //print max TBL
 #endif
