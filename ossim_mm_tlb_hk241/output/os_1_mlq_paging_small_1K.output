@@ -2,19 +2,18 @@ Time slot   0
 ld_routine
 Time slot   1
 	Loaded a process at input/proc/p0s, PID: 1 PRIO: 130
-	CPU 0: Dispatched process  1
+	CPU 3: Dispatched process  1
 Time slot   2
 	Loaded a process at input/proc/s3, PID: 2 PRIO: 39
 	CPU 2: Dispatched process  2
 Time slot   3
-	CPU 0: Put process  1 to run queue
-	CPU 0: Dispatched process  1
+	CPU 3: Put process  1 to run queue
+	CPU 3: Dispatched process  1
 Time slot   4
 	Loaded a process at input/proc/m1s, PID: 3 PRIO: 15
-	CPU 3: Dispatched process  3
 	CPU 2: Put process  2 to run queue
 	CPU 2: Dispatched process  2
-Check free rg
+Check free rg 0
 print_list_rg: 
 rg[0->300]
 rg[0->0]
@@ -23,17 +22,23 @@ Check remaining registers
 rg 4
 rg[300->600]
 
+	CPU 1: Dispatched process  3
 Time slot   5
-	CPU 0: Put process  1 to run queue
-	CPU 0: Dispatched process  1
+	CPU 3: Put process  1 to run queue
+	CPU 3: Dispatched process  1
 Time slot   6
 	Loaded a process at input/proc/s2, PID: 4 PRIO: 120
 	CPU 2: Put process  2 to run queue
-	CPU 1: Dispatched process  4
 	CPU 2: Dispatched process  2
-	CPU 3: Put process  3 to run queue
-	CPU 3: Dispatched process  3
-Check free rg
+	CPU 0: Dispatched process  4
+TLB hit at write region=1 offset=20 value=100
+print_pgtbl: 0 - 512
+00000000: 80000001
+00000004: 80000000
+Dumping memphy content
+	CPU 1: Put process  3 to run queue
+	CPU 1: Dispatched process  3
+Check free rg 0
 print_list_rg: 
 rg[0->300]
 rg[0->0]
@@ -42,21 +47,16 @@ Check remaining registers
 rg 1
 rg[300->400]
 
-TLB hit at write region=1 offset=20 value=100
-print_pgtbl: 0 - 512
-00000000: 80000001
-00000004: 80000000
-Dumping memphy content
 Time slot   7
 	Loaded a process at input/proc/m0s, PID: 5 PRIO: 120
-	CPU 0: Put process  1 to run queue
-	CPU 0: Dispatched process  5
+	CPU 3: Put process  1 to run queue
+	CPU 3: Dispatched process  5
 Time slot   8
-	CPU 1: Put process  4 to run queue
-	CPU 1: Dispatched process  4
-	CPU 3: Put process  3 to run queue
-	CPU 3: Dispatched process  3
-Check free rg
+	CPU 2: Put process  2 to run queue
+	CPU 2: Dispatched process  2
+	CPU 1: Put process  3 to run queue
+	CPU 1: Dispatched process  3
+Check free rg 2
 print_list_rg: 
 rg[200->300]
 rg[0->0]
@@ -65,48 +65,46 @@ Check remaining registers
 rg 1
 rg[300->400]
 
-	CPU 2: Put process  2 to run queue
-	CPU 2: Dispatched process  2
+	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  4
 Time slot   9
 	Loaded a process at input/proc/p1s, PID: 6 PRIO: 15
-Check free rg
+	CPU 3: Put process  5 to run queue
+	CPU 3: Dispatched process  6
+Check free rg 1
 print_list_rg: 
 rg[200->400]
 rg[0->0]
 
 Check remaining registers
 
-	CPU 0: Put process  5 to run queue
-	CPU 0: Dispatched process  6
 Time slot  10
-	CPU 1: Put process  4 to run queue
-	CPU 3: Put process  3 to run queue
+	CPU 1: Processed  3 has finished
 	CPU 1: Dispatched process  5
-	CPU 3: Dispatched process  3
-Double free
-Check free rg
+Check free rg 0
 print_list_rg: 
 rg[0->300]
 rg[0->0]
-	CPU 2: Put process  2 to run queue
-	CPU 2: Dispatched process  2
 
 Check remaining registers
 rg 1
 rg[300->400]
 
-Time slot  11
-	Loaded a process at input/proc/s0, PID: 7 PRIO: 38
-Double free
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-Time slot  12
-	CPU 1: Put process  5 to run queue
-	CPU 1: Dispatched process  7
+	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  4
 	CPU 2: Put process  2 to run queue
 	CPU 2: Dispatched process  2
-	CPU 3: Processed  3 has finished
-	CPU 3: Dispatched process  5
+Time slot  11
+	Loaded a process at input/proc/s0, PID: 7 PRIO: 38
+	CPU 3: Put process  6 to run queue
+	CPU 3: Dispatched process  6
+Time slot  12
+	CPU 2: Put process  2 to run queue
+	CPU 2: Dispatched process  7
+	CPU 1: Put process  5 to run queue
+	CPU 1: Dispatched process  2
+	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  5
 TLB miss at write region=1 offset=20 value=102
 print_pgtbl: 0 - 512
 00000000: 80000005
@@ -114,24 +112,16 @@ print_pgtbl: 0 - 512
 Dumping memphy content
 Address: 476, Value: 100
 Time slot  13
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-	CPU 2: Processed  2 has finished
+	CPU 3: Put process  6 to run queue
+	CPU 3: Dispatched process  6
+	CPU 1: Processed  2 has finished
+	CPU 1: Dispatched process  4
 Segmentation fault write
-	CPU 2: Dispatched process  4
 Time slot  14
-	CPU 3: Put process  5 to run queue
-	CPU 3: Dispatched process  5
-Segmentation fault write
-	CPU 1: Put process  7 to run queue
-	CPU 1: Dispatched process  7
-Time slot  15
-	CPU 2: Put process  4 to run queue
-	CPU 2: Dispatched process  4
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-	CPU 3: Processed  5 has finished
-	CPU 3: Dispatched process  1
+	CPU 2: Put process  7 to run queue
+	CPU 2: Dispatched process  7
+	CPU 0: Processed  5 has finished
+	CPU 0: Dispatched process  1
 TLB miss at read region=1 offset=20
 print_pgtbl: 0 - 512
 00000000: 80000001
@@ -140,33 +130,42 @@ Dumping memphy content
 Address: 476, Value: 100
 Address: 1088, Value: 102
 data readed : 100
+Time slot  15
+	CPU 1: Put process  4 to run queue
+	CPU 1: Dispatched process  4
+Segmentation fault write
+	CPU 3: Put process  6 to run queue
+	CPU 3: Dispatched process  6
 Time slot  16
 	Loaded a process at input/proc/s1, PID: 8 PRIO: 0
-Segmentation fault write
-	CPU 1: Put process  7 to run queue
-	CPU 1: Dispatched process  8
-Time slot  17
-	CPU 2: Put process  4 to run queue
-	CPU 2: Dispatched process  7
-	CPU 3: Put process  1 to run queue
-	CPU 3: Dispatched process  4
-	CPU 0: Put process  6 to run queue
-	CPU 0: Dispatched process  6
-Time slot  18
-	CPU 1: Put process  8 to run queue
-	CPU 1: Dispatched process  8
-Time slot  19
 	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-	CPU 3: Put process  4 to run queue
-	CPU 3: Dispatched process  4
-	CPU 0: Processed  6 has finished
-	CPU 0: Dispatched process  1
+	CPU 2: Dispatched process  8
+	CPU 0: Put process  1 to run queue
+	CPU 0: Dispatched process  7
+Time slot  17
+	CPU 3: Put process  6 to run queue
+	CPU 3: Dispatched process  6
+	CPU 1: Put process  4 to run queue
+	CPU 1: Dispatched process  4
+Time slot  18
+	CPU 2: Put process  8 to run queue
+	CPU 2: Dispatched process  8
+	CPU 0: Put process  7 to run queue
+	CPU 0: Dispatched process  7
+Time slot  19
+	CPU 1: Processed  4 has finished
+	CPU 1: Dispatched process  1
 Segmentation fault read
+	CPU 3: Put process  6 to run queue
+	CPU 3: Dispatched process  6
 Time slot  20
-	CPU 1: Put process  8 to run queue
-	CPU 1: Dispatched process  8
-Check free rg
+	CPU 2: Put process  8 to run queue
+	CPU 3: Processed  6 has finished
+	CPU 3 stopped
+	CPU 2: Dispatched process  8
+	CPU 0: Put process  7 to run queue
+	CPU 0: Dispatched process  7
+Check free rg 4
 print_list_rg: 
 rg[300->600]
 rg[0->0]
@@ -176,28 +175,23 @@ rg 1
 rg[200->300]
 
 Time slot  21
-	CPU 0: Processed  1 has finished
-	CPU 0 stopped
-	CPU 3: Processed  4 has finished
-	CPU 3 stopped
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-Time slot  22
-	CPU 1: Put process  8 to run queue
-	CPU 1: Dispatched process  8
-Time slot  23
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-	CPU 1: Processed  8 has finished
+	CPU 1: Processed  1 has finished
 	CPU 1 stopped
-Time slot  24
-Time slot  25
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-Time slot  26
-Time slot  27
-	CPU 2: Put process  7 to run queue
-	CPU 2: Dispatched process  7
-Time slot  28
-	CPU 2: Processed  7 has finished
+Time slot  22
+	CPU 0: Put process  7 to run queue
+	CPU 0: Dispatched process  7
+	CPU 2: Put process  8 to run queue
+	CPU 2: Dispatched process  8
+Time slot  23
+	CPU 2: Processed  8 has finished
 	CPU 2 stopped
+Time slot  24
+	CPU 0: Put process  7 to run queue
+	CPU 0: Dispatched process  7
+Time slot  25
+Time slot  26
+	CPU 0: Put process  7 to run queue
+	CPU 0: Dispatched process  7
+Time slot  27
+	CPU 0: Processed  7 has finished
+	CPU 0 stopped

@@ -41,10 +41,10 @@ Time slot  12
 	CPU 0: Put process  2 to run queue
 	CPU 0: Dispatched process  2
 Time slot  13
-	CPU 0: Processed  2 has finished
-	CPU 0: Dispatched process  1
 	CPU 1: Put process  4 to run queue
 	CPU 1: Dispatched process  4
+	CPU 0: Processed  2 has finished
+	CPU 0: Dispatched process  1
 Time slot  14
 Time slot  15
 	CPU 1: Put process  4 to run queue
@@ -53,10 +53,10 @@ Time slot  15
 	CPU 0: Dispatched process  3
 Time slot  16
 Time slot  17
-	CPU 0: Put process  3 to run queue
-	CPU 0: Dispatched process  1
 	CPU 1: Put process  4 to run queue
 	CPU 1: Dispatched process  4
+	CPU 0: Put process  3 to run queue
+	CPU 0: Dispatched process  1
 Time slot  18
 	CPU 1: Processed  4 has finished
 	CPU 1: Dispatched process  3
@@ -67,10 +67,10 @@ Time slot  20
 	CPU 1: Put process  3 to run queue
 	CPU 1: Dispatched process  3
 Time slot  21
-	CPU 1: Processed  3 has finished
-	CPU 1 stopped
 	CPU 0: Put process  1 to run queue
 	CPU 0: Dispatched process  1
+	CPU 1: Processed  3 has finished
+	CPU 1 stopped
 Time slot  22
 Time slot  23
 	CPU 0: Put process  1 to run queue
