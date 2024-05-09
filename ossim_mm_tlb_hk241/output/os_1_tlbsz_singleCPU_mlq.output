@@ -123,10 +123,26 @@ Time slot  43
 	CPU 0: Dispatched process  6
 Time slot  44
 	CPU 0: Processed  6 has finished
-	CPU 0: Dispatched process  5
+	CPU 0: Dispatched process  2
 Time slot  45
 Time slot  46
+	CPU 0: Put process  2 to run queue
+	CPU 0: Dispatched process  4
+Time slot  47
+Time slot  48
+	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  5
+Time slot  49
+Time slot  50
 	CPU 0: Put process  5 to run queue
+	CPU 0: Dispatched process  2
+Time slot  51
+Time slot  52
+	CPU 0: Put process  2 to run queue
+	CPU 0: Dispatched process  4
+Time slot  53
+Time slot  54
+	CPU 0: Put process  4 to run queue
 	CPU 0: Dispatched process  5
 Check free rg 0
 print_list_rg: 
@@ -137,54 +153,38 @@ Check remaining registers
 rg 1
 rg[300->400]
 
-Time slot  47
-Time slot  48
+Time slot  55
+Time slot  56
 	CPU 0: Put process  5 to run queue
+	CPU 0: Dispatched process  2
+Time slot  57
+Time slot  58
+	CPU 0: Put process  2 to run queue
+	CPU 0: Dispatched process  4
+Time slot  59
+Time slot  60
+	CPU 0: Put process  4 to run queue
 	CPU 0: Dispatched process  5
 TLB miss at write region=1 offset=20 value=102
 print_pgtbl: 0 - 512
 00000000: 80000003
 00000004: 80000002
 Dumping memphy content
-Time slot  49
+Time slot  61
 Segmentation fault write
-Time slot  50
+Time slot  62
 	CPU 0: Processed  5 has finished
 	CPU 0: Dispatched process  2
-Time slot  51
-Time slot  52
-	CPU 0: Put process  2 to run queue
-	CPU 0: Dispatched process  2
-Time slot  53
-Time slot  54
-	CPU 0: Put process  2 to run queue
-	CPU 0: Dispatched process  2
-Time slot  55
-Time slot  56
-	CPU 0: Put process  2 to run queue
-	CPU 0: Dispatched process  2
-Time slot  57
-Time slot  58
-	CPU 0: Put process  2 to run queue
-	CPU 0: Dispatched process  2
-Time slot  59
-	CPU 0: Processed  2 has finished
-	CPU 0: Dispatched process  4
-Time slot  60
-Time slot  61
-	CPU 0: Put process  4 to run queue
-	CPU 0: Dispatched process  4
-Time slot  62
 Time slot  63
-	CPU 0: Put process  4 to run queue
-	CPU 0: Dispatched process  4
 Time slot  64
-Time slot  65
-	CPU 0: Put process  4 to run queue
+	CPU 0: Put process  2 to run queue
 	CPU 0: Dispatched process  4
+Time slot  65
 Time slot  66
-Time slot  67
 	CPU 0: Put process  4 to run queue
+	CPU 0: Dispatched process  2
+Time slot  67
+	CPU 0: Processed  2 has finished
 	CPU 0: Dispatched process  4
 Time slot  68
 Time slot  69

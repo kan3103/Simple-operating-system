@@ -30,6 +30,7 @@ void init_scheduler(void) {
 
 	for (i = 0; i < MAX_PRIO; i ++){
 		mlq_ready_queue[i].size = 0;
+		mlq_ready_queue[i].remain_slot = MAX_PRIO-i;
 	};
 	INDEX = 0;
 #endif
@@ -52,12 +53,21 @@ struct pcb_t * get_mlq_proc(void) {
 	 */
 	pthread_mutex_lock(&queue_lock);
 	for (INDEX = INDEX ; INDEX < MAX_PRIO; INDEX++){
-		if (!empty(&mlq_ready_queue[INDEX]))
+		if (!empty(&mlq_ready_queue[INDEX])&& mlq_ready_queue[INDEX].remain_slot > 0)
 		{
 			proc = dequeue(&mlq_ready_queue[INDEX]);
 			break;
 		}
 	};
+	if(INDEX==MAX_PRIO){
+		for(int i=MAX_PRIO;i>-1;--i){
+			mlq_ready_queue[i].remain_slot=MAX_PRIO-i;
+			if (!empty(&mlq_ready_queue[i]))
+				INDEX = i;
+		};
+		if(INDEX<MAX_PRIO)
+		proc = dequeue(&mlq_ready_queue[INDEX]);
+	}
 	pthread_mutex_unlock(&queue_lock);
 	return proc;	
 }
