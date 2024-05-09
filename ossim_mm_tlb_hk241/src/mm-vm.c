@@ -179,7 +179,15 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   if(cur_vma == NULL) return -1;
 
   struct vm_rg_struct *freed_rg = &(caller->mm->symrgtbl[rgid]);
-  if(freed_rg == NULL) return -1;
+  if(freed_rg->rg_start==freed_rg->rg_end){
+    printf("Double free\n");
+    fprintf(output_file,"Double free\n");
+    return -1;
+  }
+  if(freed_rg == NULL){ 
+    printf("Segmentation fault\n");
+    fprintf(output_file,"Segmentation fault\n");
+    return -1;}
 
   rgnode->rg_start = freed_rg->rg_start;
   rgnode->rg_end = freed_rg->rg_end;
