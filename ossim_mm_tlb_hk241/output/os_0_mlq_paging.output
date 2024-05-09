@@ -1,11 +1,11 @@
 Time slot   0
 ld_routine
 	Loaded a process at input/proc/p0s, PID: 1 PRIO: 0
-	CPU 1: Dispatched process  1
+	CPU 0: Dispatched process  1
 Time slot   1
 Time slot   2
 	Loaded a process at input/proc/p1s, PID: 2 PRIO: 15
-	CPU 0: Dispatched process  2
+	CPU 1: Dispatched process  2
 Time slot   3
 Check free rg 0
 print_list_rg: 
@@ -24,8 +24,8 @@ print_pgtbl: 0 - 512
 00000004: 80000000
 Dumping memphy content
 Time slot   6
-	CPU 1: Put process  1 to run queue
-	CPU 1: Dispatched process  1
+	CPU 0: Put process  1 to run queue
+	CPU 0: Dispatched process  1
 TLB hit at read region=1 offset=20
 print_pgtbl: 0 - 512
 00000000: 80000001
@@ -36,9 +36,9 @@ data readed : 100
 Time slot   7
 Segmentation fault write
 Time slot   8
-	CPU 0: Put process  2 to run queue
-	CPU 0: Dispatched process  2
 Segmentation fault read
+	CPU 1: Put process  2 to run queue
+	CPU 1: Dispatched process  2
 Time slot   9
 Check free rg 4
 print_list_rg: 
@@ -50,10 +50,10 @@ rg 1
 rg[200->300]
 
 Time slot  10
-	CPU 1: Processed  1 has finished
-	CPU 1 stopped
+	CPU 0: Processed  1 has finished
+	CPU 0 stopped
 Time slot  11
 Time slot  12
 Time slot  13
-	CPU 0: Processed  2 has finished
-	CPU 0 stopped
+	CPU 1: Processed  2 has finished
+	CPU 1 stopped
