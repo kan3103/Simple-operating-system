@@ -97,7 +97,6 @@ struct vm_rg_struct *get_symrg_byid(struct mm_struct *mm, int rgid)
 
 int __alloc(struct pcb_t *caller, int vmaid, int rgid, int size, int *alloc_addr)
 {
-
   /*Allocate at the toproof */
   struct vm_rg_struct rgnode;
   if (get_free_vmrg_area(caller, vmaid, size, &rgnode) == 0)
@@ -180,6 +179,7 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
 
   struct vm_rg_struct *freed_rg = &(caller->mm->symrgtbl[rgid]);
   if(freed_rg->rg_start==freed_rg->rg_end){
+    fprintf(output_file,"out %d" ,rgid);
     printf("Double free\n");
     fprintf(output_file,"Double free\n");
     return -1;
@@ -195,8 +195,8 @@ int __free(struct pcb_t *caller, int vmaid, int rgid)
   freed_rg->rg_start = freed_rg->rg_end = 0;
   /*enlist the obsoleted memory region */
   enlist_vm_freerg_list(caller->mm, rgnode);
-  printf("Check free rg\n");
-  fprintf(output_file,"Check free rg\n");
+  printf("Check free rg %d\n",rgid);
+  fprintf(output_file,"Check free rg %d\n",rgid);
   print_list_rg(caller->mm->mmap->vm_freerg_list);
   _print_rg_alloc(caller->mm->symrgtbl);
   return 0;

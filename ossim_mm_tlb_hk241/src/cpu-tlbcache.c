@@ -38,11 +38,12 @@ int tlb_cache_read(struct memphy_struct * mp, int pid, int pgnum, BYTE* value)
     *      direct mapped, associated mapping etc.
     */
      // Search for the page number in the TLB
-   if(tlb_entries[pgnum].valid==0) return 0;
- 
-
-   if(tlb_entries[pgnum].pid==pid){
-      TLBMEMPHY_read(mp,pgnum,value);
+   int k= pgnum/mp->maxsz;
+   int pg= pgnum % mp->maxsz;
+   if(tlb_entries[pg].valid==0) return 0;
+   if(tlb_entries[pg].pagenum!=k) return 0;
+   if(tlb_entries[pg].pid==pid){
+      TLBMEMPHY_read(mp,pg,value);
       return 1;
    };
    return 0;
@@ -61,15 +62,20 @@ int tlb_cache_write(struct memphy_struct *mp, int pid, int pgnum, BYTE value)
     *      cache line by employing:
     *      direct mapped, associated mapping etc.
     */
-   TLBMEMPHY_write(mp,pgnum,value);
-   tlb_entries[pgnum].pid=pid;
-   tlb_entries[pgnum].valid=1;
+   int k= pgnum/mp->maxsz;
+   int pg= pgnum % mp->maxsz;
+   TLBMEMPHY_write(mp,pg,value);
+   tlb_entries[pg].pid=pid;
+   tlb_entries[pg].valid=1;
+   tlb_entries[pg].pagenum=k;
    return 0;
 }
 int tlb_cache_free(struct memphy_struct *mp, int pid, int pgnum){
-   TLBMEMPHY_write(mp,pgnum,0);
-   tlb_entries[pgnum].pid=0;
-   tlb_entries[pgnum].valid=0;
+   int pg= pgnum % mp->maxsz;
+   TLBMEMPHY_write(mp,pg,0);
+   tlb_entries[pg].pid=0;
+   tlb_entries[pg].valid=-1;
+   tlb_entries[pg].pagenum=-1;
    return 0;
 }
 /*
@@ -136,6 +142,7 @@ int init_tlbmemphy(struct memphy_struct *mp, int max_size)
    for(int i=0;i<max_size;++i){
       tlb_entries[i].valid=0;
       tlb_entries[i].pid=-1;
+      tlb_entries[i].pagenum=-1;
    }
    return 0;
 }

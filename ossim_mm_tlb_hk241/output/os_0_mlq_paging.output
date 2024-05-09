@@ -7,7 +7,7 @@ Time slot   2
 	Loaded a process at input/proc/p1s, PID: 2 PRIO: 15
 	CPU 0: Dispatched process  2
 Time slot   3
-Check free rg
+Check free rg 0
 print_list_rg: 
 rg[0->300]
 rg[0->0]
@@ -36,11 +36,11 @@ data readed : 100
 Time slot   7
 Segmentation fault write
 Time slot   8
-Segmentation fault read
 	CPU 0: Put process  2 to run queue
 	CPU 0: Dispatched process  2
+Segmentation fault read
 Time slot   9
-Check free rg
+Check free rg 4
 print_list_rg: 
 rg[300->600]
 rg[0->0]
@@ -54,5 +54,6 @@ Time slot  10
 	CPU 1 stopped
 Time slot  11
 Time slot  12
+Time slot  13
 	CPU 0: Processed  2 has finished
 	CPU 0 stopped
