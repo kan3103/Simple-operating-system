@@ -7,7 +7,7 @@ Welcome to the OS Project! This repository contains the source code for a simple
 
 - [Introduction](#introduction)
 - [Team Members](#team-members)
-
+- [How to Run](#how-to-run)
 
 ## Introduction
 
