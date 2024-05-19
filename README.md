@@ -18,7 +18,7 @@ This Simple Operating System has been developed using C for our course.
 - Nguyễn Trường Giang (HCMUT - Ho Chi Minh City University of Technology)
 - Nguyễn Đình Bằng (HCMUT - Ho Chi Minh City University of Technology)
 - Đỗ Thị Thùy Vân (HCMUT - Ho Chi Minh City University of Technology)
-- Đoàn Công Hải Khương (HCMUT - Ho Chi Minh City University of Technology)
+- Đoàn Công Hải (HCMUT - Ho Chi Minh City University of Technology)
 
 ## How to Run
 - make all to complie all
